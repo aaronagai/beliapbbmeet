@@ -458,6 +458,14 @@ a:hover {
     margin-bottom: 0;
 }
 
+.empty {
+    margin: 0;
+    padding: 10px 0;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+}
+
 footer {
     max-width: 600px;
     margin: 48px auto 0;
