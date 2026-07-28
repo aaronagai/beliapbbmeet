@@ -8,8 +8,7 @@ const I18N = {
         title: "Belia PBB Meeting Space",
         pageTitle: "Belia PBB Meeting Space",
         updated: "Updated Jul 28, 2026",
-        intro1:
-            "A quiet place for Belia PBB to meet asynchronously — raise topics, leave notes, and vote when a decision is needed.",
+        intro1: "One place for every discussion.",
         intro2:
             "No live call required. Read the agenda, add your view, cast your vote, and come back when you can.",
         activeMeetings: "Active meetings",
