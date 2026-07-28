@@ -406,6 +406,52 @@ footer {
     border-top: 1px solid #eee;
 }
 
+.attendees-dialog {
+    width: min(92vw, 420px);
+    margin: auto;
+    padding: 24px;
+    border: 1px solid #eee;
+    background: #fff;
+    color: #111;
+    font: inherit;
+}
+
+.attendees-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.28);
+}
+
+.attendees-dialog-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+}
+
+.attendees-dialog-header h2 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: #111;
+}
+
+.attendees-dialog-hint {
+    margin: 0 0 16px;
+    font-size: 13px;
+    color: #999;
+}
+
+.attendees-dialog .list {
+    margin: 0;
+}
+
+.attendees-dialog .list li.empty-item {
+    display: block;
+    color: #999;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+}
+
 .lang-toggle {
     display: flex;
     align-items: center;
