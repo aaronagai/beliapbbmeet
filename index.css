@@ -566,17 +566,45 @@ a:hover {
 .admin-question-row {
     display: grid;
     grid-template-columns: 1fr auto;
-    gap: 10px;
+    grid-template-areas:
+        "label label"
+        "input remove";
+    gap: 6px 10px;
     align-items: center;
 }
 
+.admin-question-label {
+    grid-area: label;
+    margin: 0;
+    font-size: 13px;
+    color: var(--muted);
+}
+
 .admin-question-input {
+    grid-area: input;
     width: 100%;
     padding: 10px 12px;
     border: 1px solid var(--border-strong);
     background: var(--surface);
     font: inherit;
     color: var(--text);
+}
+
+.admin-question-row .text-btn {
+    grid-area: remove;
+}
+
+.admin-form-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 12px;
+}
+
+.admin-meeting-actions {
+    display: flex;
+    gap: 12px;
+    flex-shrink: 0;
 }
 
 .admin-question-input:focus {
