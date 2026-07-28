@@ -1,0 +1,316 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    padding: 72px 32px 96px;
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+    color: #111;
+    background: #fff;
+    -webkit-font-smoothing: antialiased;
+}
+
+main {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+h1 {
+    margin: 0 0 6px;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.updated {
+    margin: 0 0 28px;
+    font-size: 13px;
+    color: #999;
+}
+
+p {
+    margin: 0 0 18px;
+}
+
+h2 {
+    margin: 36px 0 10px;
+    font-size: 13px;
+    font-weight: 400;
+    color: #999;
+}
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.list li {
+    display: flex;
+    align-items: baseline;
+    padding: 10px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.list li:first-child {
+    border-top: 1px solid #eee;
+}
+
+.list-title {
+    flex: 1;
+}
+
+.meeting {
+    border-top: 1px solid #eee;
+    padding: 16px 0;
+}
+
+.meeting:last-child {
+    border-bottom: 1px solid #eee;
+}
+
+.meeting-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.meeting-header:hover .meeting-title {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.meeting-title {
+    flex: 1;
+    font-weight: 500;
+}
+
+.meeting-meta {
+    font-size: 13px;
+    color: #999;
+    white-space: nowrap;
+}
+
+.meeting-body {
+    display: none;
+    padding-top: 14px;
+}
+
+.meeting.open .meeting-body {
+    display: block;
+}
+
+.meeting-body p {
+    margin: 0 0 14px;
+    color: #333;
+}
+
+.agenda {
+    list-style: none;
+    margin: 0 0 18px;
+    padding: 0;
+}
+
+.agenda-item {
+    padding: 14px 0;
+    border-top: 1px solid #f0f0f0;
+}
+
+.agenda-item:last-child {
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.agenda-question {
+    margin: 0 0 10px;
+    font-weight: 500;
+}
+
+.vote-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.vote-btn {
+    padding: 6px 12px;
+    border: 1px solid #ddd;
+    background: #fff;
+    font: inherit;
+    font-size: 13px;
+    color: #111;
+    cursor: pointer;
+}
+
+.vote-btn:hover {
+    border-color: #111;
+}
+
+.vote-btn.selected {
+    border-color: #111;
+    background: #111;
+    color: #fff;
+}
+
+.vote-btn:disabled {
+    opacity: 0.45;
+    cursor: default;
+}
+
+.vote-counts {
+    font-size: 13px;
+    color: #999;
+    margin: 0 0 12px;
+}
+
+.notes {
+    margin-top: 8px;
+}
+
+.notes label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: #999;
+}
+
+.notes textarea {
+    width: 100%;
+    min-height: 72px;
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    font: inherit;
+    color: #111;
+    resize: vertical;
+}
+
+.notes textarea:focus {
+    outline: none;
+    border-color: #111;
+}
+
+.notes button {
+    padding: 6px 12px;
+    border: 1px solid #111;
+    background: #111;
+    font: inherit;
+    font-size: 13px;
+    color: #fff;
+    cursor: pointer;
+}
+
+.notes button:hover {
+    background: #333;
+}
+
+.note-list {
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 0;
+}
+
+.note-list li {
+    padding: 10px 0;
+    border-top: 1px solid #f0f0f0;
+    font-size: 14px;
+}
+
+.note-list li.note-empty {
+    color: #999;
+    border-top: none;
+    padding-top: 0;
+}
+
+.note-meta {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: #999;
+}
+
+.empty {
+    margin: 0;
+    padding: 10px 0;
+    color: #999;
+    border-top: 1px solid #eee;
+    border-bottom: 1px solid #eee;
+}
+
+footer {
+    max-width: 600px;
+    margin: 48px auto 0;
+    padding-top: 18px;
+    border-top: 1px solid #eee;
+}
+
+.lang-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #999;
+}
+
+.lang-btn {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: 13px;
+    color: #999;
+    cursor: pointer;
+}
+
+.lang-btn:hover {
+    color: #111;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.lang-btn.active {
+    color: #111;
+    cursor: default;
+}
+
+.lang-btn.active:hover {
+    text-decoration: none;
+}
+
+.lang-sep {
+    color: #ccc;
+}
+
+@media (max-width: 640px) {
+    body {
+        padding: 48px 24px 72px;
+    }
+
+    .meeting-header {
+        flex-direction: column;
+        gap: 4px;
+    }
+}
