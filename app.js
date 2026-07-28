@@ -1083,10 +1083,15 @@ function escapeHtml(value) {
 function renderAdminPage() {
     applyStaticCopy(t("adminPageTitle"));
 
-    const saveBtn = document.querySelector('#admin-form button[type="submit"]');
-    const editingId = document.getElementById("admin-form")?.dataset.editingId || "";
+    const form = document.getElementById("admin-form");
+    const editingId = form?.dataset.editingId || "";
+    const saveBtn = form?.querySelector('button[type="submit"]');
     if (saveBtn) {
         saveBtn.textContent = editingId ? t("adminUpdate") : t("adminSave");
+    }
+    const heading = document.getElementById("admin-form-heading");
+    if (heading) {
+        heading.textContent = editingId ? t("adminUpdate") : t("adminAddMeeting");
     }
 
     const addQuestionBtn = document.getElementById("admin-add-question");
