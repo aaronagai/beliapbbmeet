@@ -547,6 +547,58 @@ a:hover {
     color: var(--muted);
 }
 
+.agenda-builder {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.agenda-builder-label {
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.admin-questions {
+    display: grid;
+    gap: 8px;
+}
+
+.admin-question-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
+}
+
+.admin-question-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    font: inherit;
+    color: var(--text);
+}
+
+.admin-question-input:focus {
+    outline: none;
+    border-color: var(--text);
+}
+
+.secondary-btn {
+    justify-self: start;
+    padding: 6px 12px;
+    border: 1px solid var(--border-strong);
+    background: transparent;
+    font: inherit;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+}
+
+.secondary-btn:hover {
+    border-color: var(--text);
+}
+
 .admin-notice {
     margin: 10px 0 0;
     font-size: 13px;
