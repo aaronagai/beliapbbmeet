@@ -33,6 +33,50 @@ h1 {
     color: #999;
 }
 
+.meeting-roles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 24px;
+    margin: -12px 0 28px;
+}
+
+.role {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.role-label {
+    font-size: 13px;
+    color: #999;
+}
+
+.role-value {
+    font-size: 15px;
+    color: #111;
+}
+
+.role-input {
+    width: 100%;
+    padding: 0;
+    border: 0;
+    border-bottom: 1px solid #eee;
+    background: transparent;
+    font: inherit;
+    font-size: 15px;
+    color: #111;
+}
+
+.role-input:focus {
+    outline: none;
+    border-bottom-color: #111;
+}
+
+.role-input::placeholder {
+    color: #bbb;
+}
+
 p {
     margin: 0 0 18px;
 }
@@ -391,5 +435,10 @@ footer {
 
     .list .meeting-meta {
         margin-left: 0;
+    }
+
+    .meeting-roles {
+        grid-template-columns: 1fr;
+        gap: 14px;
     }
 }

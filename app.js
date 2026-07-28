@@ -44,6 +44,9 @@ const I18N = {
         joiningAs: (name) => `Joining as ${name}`,
         voteBy: (choice, names) =>
             names.length ? `${choice}: ${names.join(", ")}` : "",
+        chairedBy: "This meeting is chaired by:",
+        minutesBy: "Minutes taken by:",
+        roleUnset: "—",
     },
     bm: {
         title: "Ruang Mesyuarat Belia PBB",
@@ -86,6 +89,9 @@ const I18N = {
         joiningAs: (name) => `Menyertai sebagai ${name}`,
         voteBy: (choice, names) =>
             names.length ? `${choice}: ${names.join(", ")}` : "",
+        chairedBy: "Mesyuarat ini dipengerusikan oleh:",
+        minutesBy: "Minit diambil oleh:",
+        roleUnset: "—",
     },
 };
 
@@ -102,6 +108,8 @@ const MEETINGS = [
             en: "First async meeting for Belia PBB. Align on how we use this space and what we want to focus on next.",
             bm: "Mesyuarat tidak segerak pertama untuk Belia PBB. Selaraskan cara kita guna ruang ini dan fokus seterusnya.",
         },
+        chair: "Aina Rahman",
+        minutesBy: "Daniel Ng",
         items: [
             {
                 id: "use-async",
@@ -131,6 +139,8 @@ const MEETINGS = [
             en: "Share and vote on early programme ideas for Belia PBB members. Add notes with context before voting.",
             bm: "Kongsi dan undi idea awal program untuk ahli Belia PBB. Tambah nota dengan konteks sebelum mengundi.",
         },
+        chair: "",
+        minutesBy: "",
         items: [
             {
                 id: "community-outreach",
@@ -167,6 +177,8 @@ const MEETINGS = [
             en: "Closed example meeting. Votes are locked.",
             bm: "Contoh mesyuarat ditutup. Undian dikunci.",
         },
+        chair: "Sofia Tan",
+        minutesBy: "Aina Rahman",
         items: [
             {
                 id: "keep-name",
@@ -224,6 +236,7 @@ function defaultState() {
                 },
             ],
         },
+        roles: {},
     };
 }
 
@@ -236,6 +249,7 @@ function loadState() {
             votes: parsed.votes || {},
             notes: parsed.notes || {},
             comments: parsed.comments || {},
+            roles: parsed.roles || {},
         };
     } catch {
         return defaultState();
@@ -373,6 +387,47 @@ function renderMeetingList(meetings) {
     return list;
 }
 
+function getMeetingRoles(meeting, state) {
+    const saved = (state.roles && state.roles[meeting.id]) || {};
+    return {
+        chair: (saved.chair || meeting.chair || "").trim(),
+        minutesBy: (saved.minutesBy || meeting.minutesBy || "").trim(),
+    };
+}
+
+function renderMeetingRoles(meeting, state, locked) {
+    const roles = getMeetingRoles(meeting, state);
+    const chairEl = document.getElementById("meeting-chair");
+    const minutesEl = document.getElementById("meeting-minutes");
+    if (!chairEl || !minutesEl) return;
+
+    chairEl.replaceChildren(renderRoleValue("chair", roles.chair, meeting, locked));
+    minutesEl.replaceChildren(renderRoleValue("minutesBy", roles.minutesBy, meeting, locked));
+}
+
+function renderRoleValue(field, value, meeting, locked) {
+    if (locked) {
+        const span = document.createElement("span");
+        span.textContent = value || t("roleUnset");
+        return span;
+    }
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "role-input";
+    input.value = value;
+    input.placeholder = t("roleUnset");
+    input.setAttribute("aria-label", field === "chair" ? t("chairedBy") : t("minutesBy"));
+    input.addEventListener("change", () => {
+        const next = loadState();
+        if (!next.roles[meeting.id]) next.roles[meeting.id] = {};
+        next.roles[meeting.id][field] = input.value.trim();
+        saveState(next);
+        renderAll();
+    });
+    return input;
+}
+
 function renderMeetingPage() {
     const meeting = findMeeting(getMeetingIdFromQuery());
     const gate = document.getElementById("name-gate");
@@ -382,6 +437,7 @@ function renderMeetingPage() {
     const summaryEl = document.getElementById("meeting-summary");
     const agendaRoot = document.getElementById("agenda");
     const memberStatus = document.getElementById("member-status");
+    const rolesEl = document.getElementById("meeting-roles");
     const memberName = getMemberName();
 
     if (!meeting) {
@@ -393,6 +449,7 @@ function renderMeetingPage() {
         summaryEl.textContent = "";
         agendaRoot.innerHTML = "";
         memberStatus.textContent = "";
+        if (rolesEl) rolesEl.hidden = true;
         return;
     }
 
@@ -410,13 +467,15 @@ function renderMeetingPage() {
     memberStatus.textContent = t("joiningAs")(memberName);
 
     const locked = meeting.status === "closed";
+    const state = loadState();
     titleEl.textContent = title;
     dateEl.textContent = locked
         ? `${localized(meeting.date)} · ${t("closedLabel")}`
         : localized(meeting.date);
+    if (rolesEl) rolesEl.hidden = false;
+    renderMeetingRoles(meeting, state, locked);
     summaryEl.textContent = localized(meeting.summary);
 
-    const state = loadState();
     const voterId = getVoterId();
 
     agendaRoot.innerHTML = "";
