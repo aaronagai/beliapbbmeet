@@ -77,10 +77,15 @@ const I18N = {
         adminMinutesByLabel: "Minutes taken by",
         adminMinutesLabel: "Summary (for closed meetings)",
         adminAgendaLabel: "Agenda questions",
-        adminAddQuestion: "Add question",
+        adminAddQuestion: "+ Add question",
         adminQuestionPlaceholder: "Should we…",
         adminRemoveQuestion: "Remove",
+        adminQuestionLabel: (n) => `Question ${n}`,
         adminSave: "Save meeting",
+        adminEdit: "Edit",
+        adminCancelEdit: "Cancel edit",
+        adminUpdate: "Update meeting",
+        adminUpdated: "Meeting updated.",
         adminDelete: "Delete",
         adminSaved: "Meeting saved.",
         adminHome: "← Meeting space",
@@ -158,10 +163,15 @@ const I18N = {
         adminMinutesByLabel: "Minit diambil oleh",
         adminMinutesLabel: "Ringkasan (untuk mesyuarat ditutup)",
         adminAgendaLabel: "Soalan agenda",
-        adminAddQuestion: "Tambah soalan",
+        adminAddQuestion: "+ Tambah soalan",
         adminQuestionPlaceholder: "Patutkah kita…",
         adminRemoveQuestion: "Buang",
+        adminQuestionLabel: (n) => `Soalan ${n}`,
         adminSave: "Simpan mesyuarat",
+        adminEdit: "Edit",
+        adminCancelEdit: "Batal edit",
+        adminUpdate: "Kemas kini mesyuarat",
+        adminUpdated: "Mesyuarat dikemas kini.",
         adminDelete: "Padam",
         adminSaved: "Mesyuarat disimpan.",
         adminHome: "← Ruang mesyuarat",
@@ -353,6 +363,39 @@ function createMeetingFromForm({
     meetings.unshift(meeting);
     saveMeetings(meetings);
     return meeting;
+}
+
+function updateMeetingFromForm(id, payload) {
+    const meetings = getMeetings();
+    const index = meetings.findIndex((meeting) => meeting.id === id);
+    if (index < 0) return null;
+
+    const agenda = (payload.questions || [])
+        .map((question) => String(question || "").trim())
+        .filter(Boolean);
+
+    const current = meetings[index];
+    const updated = {
+        ...current,
+        status: payload.status === "closed" ? "closed" : "active",
+        date: bilingual(payload.date),
+        title: bilingual(payload.title),
+        summary: bilingual(payload.summary),
+        chair: String(payload.chair || "").trim(),
+        minutesBy: String(payload.minutesBy || "").trim(),
+        items: agenda.map((question, questionIndex) => ({
+            id: `q${questionIndex + 1}`,
+            question: bilingual(question),
+        })),
+    };
+
+    const minutesText = String(payload.minutes || "").trim();
+    if (minutesText) updated.minutes = bilingual(minutesText);
+    else delete updated.minutes;
+
+    meetings[index] = updated;
+    saveMeetings(meetings);
+    return updated;
 }
 
 function deleteMeeting(id) {
@@ -1005,6 +1048,15 @@ function renderAdminPage() {
     if (statusActive) statusActive.textContent = t("adminStatusActive");
     if (statusClosed) statusClosed.textContent = t("adminStatusClosed");
 
+    const saveBtn = document.querySelector('#admin-form button[type="submit"]');
+    const editingId = document.getElementById("admin-form")?.dataset.editingId || "";
+    if (saveBtn) {
+        saveBtn.textContent = editingId ? t("adminUpdate") : t("adminSave");
+    }
+
+    const addQuestionBtn = document.getElementById("admin-add-question");
+    if (addQuestionBtn) addQuestionBtn.textContent = t("adminAddQuestion");
+
     const list = document.getElementById("admin-meetings");
     if (!list) return;
     list.innerHTML = "";
@@ -1026,34 +1078,41 @@ function renderAdminPage() {
                 <a href="${meetingUrl(meeting.id)}">${escapeHtml(localized(meeting.title))}</a>
                 <span class="meeting-meta"> · ${escapeHtml(statusLabel)}</span>
             </span>
-            <button type="button" class="text-btn" data-delete-meeting="${escapeHtml(meeting.id)}">${escapeHtml(t("adminDelete"))}</button>
+            <span class="admin-meeting-actions">
+                <button type="button" class="text-btn" data-edit-meeting="${escapeHtml(meeting.id)}">${escapeHtml(t("adminEdit"))}</button>
+                <button type="button" class="text-btn" data-delete-meeting="${escapeHtml(meeting.id)}">${escapeHtml(t("adminDelete"))}</button>
+            </span>
         `;
         ul.appendChild(li);
     });
     list.appendChild(ul);
-
-    list.querySelectorAll("[data-delete-meeting]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-            const id = btn.getAttribute("data-delete-meeting");
-            if (!id) return;
-            deleteMeeting(id);
-            renderAdminPage();
-        });
-    });
 }
 
 function setupAdminForm() {
     const form = document.getElementById("admin-form");
-    if (!form) return;
+    if (!form || form.dataset.bound === "true") return;
+    form.dataset.bound = "true";
 
     const dateInput = document.getElementById("admin-date");
     const questionsRoot = document.getElementById("admin-questions");
-    const addQuestionBtn = document.getElementById("admin-add-question");
+    const cancelBtn = document.getElementById("admin-cancel-edit");
 
-    function addQuestionField(value = "") {
+    function renumberQuestions() {
         if (!questionsRoot) return;
+        [...questionsRoot.querySelectorAll(".admin-question-row")].forEach((row, index) => {
+            const label = row.querySelector(".admin-question-label");
+            if (label) label.textContent = t("adminQuestionLabel")(index + 1);
+        });
+    }
+
+    function addQuestionField(value = "", { focus = true } = {}) {
+        if (!questionsRoot) return null;
         const row = document.createElement("div");
         row.className = "admin-question-row";
+
+        const label = document.createElement("label");
+        label.className = "admin-question-label";
+        label.textContent = t("adminQuestionLabel")(questionsRoot.children.length + 1);
 
         const input = document.createElement("input");
         input.type = "text";
@@ -1062,26 +1121,58 @@ function setupAdminForm() {
         input.maxLength = 240;
         input.placeholder = t("adminQuestionPlaceholder");
         input.value = value;
+        input.setAttribute("aria-label", label.textContent);
 
         const remove = document.createElement("button");
         remove.type = "button";
-        remove.className = "text-btn";
+        remove.className = "text-btn admin-remove-question";
         remove.textContent = t("adminRemoveQuestion");
-        remove.addEventListener("click", () => {
-            row.remove();
-            if (!questionsRoot.children.length) addQuestionField();
-        });
 
+        row.appendChild(label);
         row.appendChild(input);
         row.appendChild(remove);
         questionsRoot.appendChild(row);
-        input.focus();
+        renumberQuestions();
+        if (focus) input.focus();
+        return input;
     }
 
-    function resetQuestions() {
+    function resetQuestions(values = [""]) {
         if (!questionsRoot) return;
         questionsRoot.innerHTML = "";
-        addQuestionField();
+        const list = values.length ? values : [""];
+        list.forEach((value, index) => {
+            addQuestionField(value, { focus: false });
+        });
+    }
+
+    function fillForm(meeting) {
+        form.dataset.editingId = meeting?.id || "";
+        document.getElementById("admin-title").value = meeting ? localized(meeting.title) : "";
+        document.getElementById("admin-date").value = meeting
+            ? localized(meeting.date)
+            : new Date().toLocaleDateString("en-GB", {
+                  day: "numeric",
+                  month: "short",
+                  year: "numeric",
+              });
+        document.getElementById("admin-status").value = meeting?.status || "active";
+        document.getElementById("admin-summary").value = meeting ? localized(meeting.summary) : "";
+        document.getElementById("admin-chair").value = meeting?.chair || "";
+        document.getElementById("admin-minutes-by").value = meeting?.minutesBy || "";
+        document.getElementById("admin-minutes").value = meeting?.minutes
+            ? localized(meeting.minutes)
+            : "";
+        resetQuestions(
+            meeting?.items?.length
+                ? meeting.items.map((item) => localized(item.question))
+                : [""]
+        );
+        if (cancelBtn) cancelBtn.hidden = !meeting;
+        const saveBtn = form.querySelector('button[type="submit"]');
+        if (saveBtn) saveBtn.textContent = meeting ? t("adminUpdate") : t("adminSave");
+        const heading = document.getElementById("admin-form-heading");
+        if (heading) heading.textContent = meeting ? t("adminUpdate") : t("adminAddMeeting");
     }
 
     if (dateInput && !dateInput.value) {
@@ -1093,14 +1184,63 @@ function setupAdminForm() {
     }
 
     if (questionsRoot && !questionsRoot.children.length) {
-        addQuestionField();
+        resetQuestions([""]);
     }
 
-    if (addQuestionBtn) {
-        addQuestionBtn.addEventListener("click", () => {
-            addQuestionField();
+    form.addEventListener("click", (event) => {
+        const addBtn = event.target.closest("#admin-add-question");
+        if (addBtn) {
+            event.preventDefault();
+            addQuestionField("");
+            return;
+        }
+
+        const removeBtn = event.target.closest(".admin-remove-question");
+        if (removeBtn) {
+            event.preventDefault();
+            const row = removeBtn.closest(".admin-question-row");
+            if (row) row.remove();
+            if (!questionsRoot.children.length) addQuestionField("", { focus: false });
+            renumberQuestions();
+        }
+    });
+
+    form.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter") return;
+        if (!event.target.classList.contains("admin-question-input")) return;
+        event.preventDefault();
+        const input = addQuestionField("");
+        if (input) input.focus();
+    });
+
+    if (cancelBtn) {
+        cancelBtn.addEventListener("click", () => {
+            fillForm(null);
+            const notice = document.getElementById("admin-notice");
+            if (notice) notice.hidden = true;
         });
     }
+
+    document.getElementById("admin-meetings")?.addEventListener("click", (event) => {
+        const editBtn = event.target.closest("[data-edit-meeting]");
+        if (editBtn) {
+            const id = editBtn.getAttribute("data-edit-meeting");
+            const meeting = findMeeting(id);
+            if (!meeting) return;
+            fillForm(meeting);
+            form.scrollIntoView({ behavior: "smooth", block: "start" });
+            return;
+        }
+
+        const deleteBtn = event.target.closest("[data-delete-meeting]");
+        if (deleteBtn) {
+            const id = deleteBtn.getAttribute("data-delete-meeting");
+            if (!id) return;
+            deleteMeeting(id);
+            if (form.dataset.editingId === id) fillForm(null);
+            renderAdminPage();
+        }
+    });
 
     form.addEventListener("submit", (event) => {
         event.preventDefault();
@@ -1117,7 +1257,7 @@ function setupAdminForm() {
 
         if (!title.trim()) return;
 
-        createMeetingFromForm({
+        const payload = {
             title,
             date,
             status,
@@ -1126,22 +1266,18 @@ function setupAdminForm() {
             minutesBy,
             minutes,
             questions,
-        });
+        };
 
-        form.reset();
-        if (dateInput) {
-            dateInput.value = new Date().toLocaleDateString("en-GB", {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-            });
-        }
-        resetQuestions();
+        const editingId = form.dataset.editingId || "";
+        if (editingId) updateMeetingFromForm(editingId, payload);
+        else createMeetingFromForm(payload);
+
+        fillForm(null);
 
         const notice = document.getElementById("admin-notice");
         if (notice) {
             notice.hidden = false;
-            notice.textContent = t("adminSaved");
+            notice.textContent = editingId ? t("adminUpdated") : t("adminSaved");
         }
         renderAdminPage();
     });
