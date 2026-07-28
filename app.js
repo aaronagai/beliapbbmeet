@@ -13,7 +13,7 @@ const I18N = {
             "No live call required. Read the agenda, add your view, cast your vote, and come back when you can.",
         howItWorks: "How it works",
         step1: "Open a meeting and read the agenda",
-        step2: "Leave a short note if you have something to add",
+        step2: "Leave a comment on each question if you have something to add",
         step3: "Vote Yes, No, or Abstain on items that need a decision",
         activeMeetings: "Active meetings",
         closedMeetings: "Closed",
@@ -23,6 +23,10 @@ const I18N = {
         noNotes: "No notes yet.",
         notePlaceholder: "Leave a short note for the group…",
         addNote: "Add note",
+        comments: "Comments",
+        noComments: "No comments yet.",
+        commentPlaceholder: "Leave a comment on this question…",
+        addComment: "Add comment",
         yes: "Yes",
         no: "No",
         abstain: "Abstain",
@@ -51,7 +55,7 @@ const I18N = {
             "Tiada panggilan langsung diperlukan. Baca agenda, kongsikan pandangan, undi, dan kembali bila anda boleh.",
         howItWorks: "Cara ia berfungsi",
         step1: "Buka mesyuarat dan baca agenda",
-        step2: "Tinggalkan nota ringkas jika ada sesuatu untuk dikongsi",
+        step2: "Tinggalkan komen pada setiap soalan jika ada sesuatu untuk dikongsi",
         step3: "Undi Ya, Tidak, atau Abstain bagi perkara yang perlu keputusan",
         activeMeetings: "Mesyuarat aktif",
         closedMeetings: "Ditutup",
@@ -61,6 +65,10 @@ const I18N = {
         noNotes: "Belum ada nota.",
         notePlaceholder: "Tinggalkan nota ringkas untuk kumpulan…",
         addNote: "Tambah nota",
+        comments: "Komen",
+        noComments: "Belum ada komen.",
+        commentPlaceholder: "Tinggalkan komen untuk soalan ini…",
+        addComment: "Tambah komen",
         yes: "Ya",
         no: "Tidak",
         abstain: "Abstain",
@@ -207,6 +215,15 @@ function defaultState() {
                 },
             ],
         },
+        comments: {
+            "naming-space::keep-name": [
+                {
+                    text: "Works for now. We can rename later if needed.",
+                    name: "Aina",
+                    when: "Jul 20, 2026",
+                },
+            ],
+        },
     };
 }
 
@@ -218,6 +235,7 @@ function loadState() {
         return {
             votes: parsed.votes || {},
             notes: parsed.notes || {},
+            comments: parsed.comments || {},
         };
     } catch {
         return defaultState();
@@ -363,7 +381,6 @@ function renderMeetingPage() {
     const dateEl = document.getElementById("meeting-date");
     const summaryEl = document.getElementById("meeting-summary");
     const agendaRoot = document.getElementById("agenda");
-    const notesRoot = document.getElementById("notes");
     const memberStatus = document.getElementById("member-status");
     const memberName = getMemberName();
 
@@ -375,7 +392,6 @@ function renderMeetingPage() {
         dateEl.textContent = "";
         summaryEl.textContent = "";
         agendaRoot.innerHTML = "";
-        notesRoot.innerHTML = "";
         memberStatus.textContent = "";
         return;
     }
@@ -410,48 +426,51 @@ function renderMeetingPage() {
         agenda.appendChild(renderAgendaItem(meeting, item, state, voterId, locked, memberName));
     });
     agendaRoot.appendChild(agenda);
-
-    notesRoot.innerHTML = "";
-    notesRoot.appendChild(renderNotes(meeting, state, locked, memberName));
 }
 
-function renderNotes(meeting, state, locked, memberName) {
-    const notesWrap = document.createElement("div");
-    notesWrap.className = "notes";
+function renderItemComments(meeting, item, state, locked, memberName) {
+    const wrap = document.createElement("div");
+    wrap.className = "item-comments";
 
-    const noteList = document.createElement("ul");
-    noteList.className = "note-list";
-    const notes = state.notes[meeting.id] || [];
+    const heading = document.createElement("p");
+    heading.className = "comments-label";
+    heading.textContent = t("comments");
+    wrap.appendChild(heading);
 
-    if (!notes.length) {
+    const list = document.createElement("ul");
+    list.className = "note-list";
+    const key = voteKey(meeting.id, item.id);
+    const comments = state.comments[key] || [];
+
+    if (!comments.length) {
         const empty = document.createElement("li");
         empty.className = "note-empty";
-        empty.textContent = t("noNotes");
-        noteList.appendChild(empty);
+        empty.textContent = t("noComments");
+        list.appendChild(empty);
     } else {
-        notes.forEach((note) => {
+        comments.forEach((comment) => {
             const li = document.createElement("li");
-            const who = note.name || t("notes");
-            li.innerHTML = `${escapeHtml(note.text)}<span class="note-meta">${escapeHtml(who)} · ${escapeHtml(note.when)}</span>`;
-            noteList.appendChild(li);
+            const who = comment.name || t("comments");
+            li.innerHTML = `${escapeHtml(comment.text)}<span class="note-meta">${escapeHtml(who)} · ${escapeHtml(comment.when)}</span>`;
+            list.appendChild(li);
         });
     }
 
     if (!locked) {
         const textarea = document.createElement("textarea");
-        textarea.id = `note-${meeting.id}`;
-        textarea.setAttribute("aria-label", t("notes"));
-        textarea.placeholder = t("notePlaceholder");
+        textarea.id = `comment-${meeting.id}-${item.id}`;
+        textarea.setAttribute("aria-label", t("comments"));
+        textarea.placeholder = t("commentPlaceholder");
 
         const button = document.createElement("button");
         button.type = "button";
-        button.textContent = t("addNote");
+        button.textContent = t("addComment");
         button.addEventListener("click", () => {
             const text = textarea.value.trim();
             if (!text) return;
             const next = loadState();
-            if (!next.notes[meeting.id]) next.notes[meeting.id] = [];
-            next.notes[meeting.id].push({
+            if (!next.comments[key]) next.comments[key] = [];
+            next.comments[key].push({
                 text,
                 name: memberName,
                 when: new Date().toLocaleString(),
@@ -460,12 +479,12 @@ function renderNotes(meeting, state, locked, memberName) {
             renderAll();
         });
 
-        notesWrap.appendChild(textarea);
-        notesWrap.appendChild(button);
+        wrap.appendChild(textarea);
+        wrap.appendChild(button);
     }
 
-    notesWrap.appendChild(noteList);
-    return notesWrap;
+    wrap.appendChild(list);
+    return wrap;
 }
 
 function renderAgendaItem(meeting, item, state, voterId, locked, memberName) {
@@ -525,6 +544,7 @@ function renderAgendaItem(meeting, item, state, voterId, locked, memberName) {
     li.appendChild(row);
     li.appendChild(countsEl);
     if (parts.length) li.appendChild(roster);
+    li.appendChild(renderItemComments(meeting, item, state, locked, memberName));
     return li;
 }
 

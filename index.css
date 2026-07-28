@@ -224,7 +224,48 @@ a:hover {
 .vote-roster {
     font-size: 13px;
     color: #999;
-    margin: 0 0 12px;
+    margin: 0 0 14px;
+}
+
+.item-comments {
+    margin-top: 4px;
+}
+
+.comments-label {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: #999;
+}
+
+.item-comments textarea {
+    width: 100%;
+    min-height: 64px;
+    margin-top: 10px;
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    font: inherit;
+    color: #111;
+    resize: vertical;
+}
+
+.item-comments textarea:focus {
+    outline: none;
+    border-color: #111;
+}
+
+.item-comments button {
+    padding: 6px 12px;
+    border: 1px solid #111;
+    background: #111;
+    font: inherit;
+    font-size: 13px;
+    color: #fff;
+    cursor: pointer;
+}
+
+.item-comments button:hover {
+    background: #333;
 }
 
 .notes {
