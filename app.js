@@ -77,7 +77,9 @@ const I18N = {
         adminMinutesByLabel: "Minutes taken by",
         adminMinutesLabel: "Summary (for closed meetings)",
         adminAgendaLabel: "Agenda questions",
-        adminAgendaHint: "One question per line.",
+        adminAddQuestion: "Add question",
+        adminQuestionPlaceholder: "Should we…",
+        adminRemoveQuestion: "Remove",
         adminSave: "Save meeting",
         adminDelete: "Delete",
         adminSaved: "Meeting saved.",
@@ -156,7 +158,9 @@ const I18N = {
         adminMinutesByLabel: "Minit diambil oleh",
         adminMinutesLabel: "Ringkasan (untuk mesyuarat ditutup)",
         adminAgendaLabel: "Soalan agenda",
-        adminAgendaHint: "Satu soalan setiap baris.",
+        adminAddQuestion: "Tambah soalan",
+        adminQuestionPlaceholder: "Patutkah kita…",
+        adminRemoveQuestion: "Buang",
         adminSave: "Simpan mesyuarat",
         adminDelete: "Padam",
         adminSaved: "Mesyuarat disimpan.",
@@ -321,13 +325,12 @@ function createMeetingFromForm({
     chair,
     minutesBy,
     minutes,
-    agendaText,
+    questions,
 }) {
     const meetings = getMeetings();
     const id = uniqueMeetingId(title, meetings);
-    const questions = String(agendaText || "")
-        .split("\n")
-        .map((line) => line.trim())
+    const agenda = (questions || [])
+        .map((question) => String(question || "").trim())
         .filter(Boolean);
 
     const meeting = {
@@ -338,7 +341,7 @@ function createMeetingFromForm({
         summary: bilingual(summary),
         chair: String(chair || "").trim(),
         minutesBy: String(minutesBy || "").trim(),
-        items: questions.map((question, index) => ({
+        items: agenda.map((question, index) => ({
             id: `q${index + 1}`,
             question: bilingual(question),
         })),
@@ -1044,11 +1047,58 @@ function setupAdminForm() {
     if (!form) return;
 
     const dateInput = document.getElementById("admin-date");
+    const questionsRoot = document.getElementById("admin-questions");
+    const addQuestionBtn = document.getElementById("admin-add-question");
+
+    function addQuestionField(value = "") {
+        if (!questionsRoot) return;
+        const row = document.createElement("div");
+        row.className = "admin-question-row";
+
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "admin-question-input";
+        input.name = "question";
+        input.maxLength = 240;
+        input.placeholder = t("adminQuestionPlaceholder");
+        input.value = value;
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "text-btn";
+        remove.textContent = t("adminRemoveQuestion");
+        remove.addEventListener("click", () => {
+            row.remove();
+            if (!questionsRoot.children.length) addQuestionField();
+        });
+
+        row.appendChild(input);
+        row.appendChild(remove);
+        questionsRoot.appendChild(row);
+        input.focus();
+    }
+
+    function resetQuestions() {
+        if (!questionsRoot) return;
+        questionsRoot.innerHTML = "";
+        addQuestionField();
+    }
+
     if (dateInput && !dateInput.value) {
         dateInput.value = new Date().toLocaleDateString("en-GB", {
             day: "numeric",
             month: "short",
             year: "numeric",
+        });
+    }
+
+    if (questionsRoot && !questionsRoot.children.length) {
+        addQuestionField();
+    }
+
+    if (addQuestionBtn) {
+        addQuestionBtn.addEventListener("click", () => {
+            addQuestionField();
         });
     }
 
@@ -1061,7 +1111,9 @@ function setupAdminForm() {
         const chair = document.getElementById("admin-chair")?.value || "";
         const minutesBy = document.getElementById("admin-minutes-by")?.value || "";
         const minutes = document.getElementById("admin-minutes")?.value || "";
-        const agendaText = document.getElementById("admin-agenda")?.value || "";
+        const questions = [...document.querySelectorAll(".admin-question-input")].map(
+            (input) => input.value
+        );
 
         if (!title.trim()) return;
 
@@ -1073,7 +1125,7 @@ function setupAdminForm() {
             chair,
             minutesBy,
             minutes,
-            agendaText,
+            questions,
         });
 
         form.reset();
@@ -1084,6 +1136,7 @@ function setupAdminForm() {
                 year: "numeric",
             });
         }
+        resetQuestions();
 
         const notice = document.getElementById("admin-notice");
         if (notice) {

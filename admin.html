@@ -51,9 +51,11 @@
             <label for="admin-minutes" data-i18n="adminMinutesLabel">Summary (for closed meetings)</label>
             <textarea id="admin-minutes" name="minutes" rows="4"></textarea>
 
-            <label for="admin-agenda" data-i18n="adminAgendaLabel">Agenda questions</label>
-            <p class="field-hint" data-i18n="adminAgendaHint">One question per line.</p>
-            <textarea id="admin-agenda" name="agenda" rows="5" placeholder="Should we…&#10;Do we agree to…"></textarea>
+            <div class="agenda-builder">
+                <span class="agenda-builder-label" data-i18n="adminAgendaLabel">Agenda questions</span>
+                <div id="admin-questions" class="admin-questions"></div>
+                <button type="button" id="admin-add-question" class="secondary-btn" data-i18n="adminAddQuestion">Add question</button>
+            </div>
 
             <button type="submit" data-i18n="adminSave">Save meeting</button>
             <p id="admin-notice" class="admin-notice" hidden></p>
