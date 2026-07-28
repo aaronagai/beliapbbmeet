@@ -365,7 +365,6 @@ function renderMeetingPage() {
     const agendaRoot = document.getElementById("agenda");
     const notesRoot = document.getElementById("notes");
     const memberStatus = document.getElementById("member-status");
-    const nameInput = document.getElementById("member-name");
     const memberName = getMemberName();
 
     if (!meeting) {
