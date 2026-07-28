@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Admin · Belia PBB</title>
+
+    <meta charset="UTF-8">
+    <meta name="description" content="Belia PBB meeting admin">
+    <meta name="author" content="Belia PBB">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>
+        (function () {
+            var pref = localStorage.getItem("belia-pbb-theme") || "system";
+            var dark = pref === "dark" || (pref === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+            document.documentElement.dataset.theme = dark ? "dark" : "light";
+            document.documentElement.dataset.themePref = pref;
+        })();
+    </script>
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+    <main>
+        <p class="back"><a href="index.html" data-i18n="adminHome">← Meeting space</a></p>
+        <h1 data-i18n="adminTitle">Admin</h1>
+        <p class="updated" data-i18n="adminIntro">Add and manage meetings for Belia PBB.</p>
+
+        <h2 data-i18n="adminAddMeeting">Add meeting</h2>
+        <form id="admin-form" class="admin-form">
+            <label for="admin-title" data-i18n="adminTitleLabel">Title</label>
+            <input id="admin-title" name="title" type="text" required maxlength="120">
+
+            <label for="admin-date" data-i18n="adminDateLabel">Date</label>
+            <input id="admin-date" name="date" type="text" required maxlength="40">
+
+            <label for="admin-status" data-i18n="adminStatusLabel">Status</label>
+            <select id="admin-status" name="status">
+                <option value="active">Active</option>
+                <option value="closed">Closed</option>
+            </select>
+
+            <label for="admin-summary" data-i18n="adminSummaryLabel">Short description</label>
+            <textarea id="admin-summary" name="summary" rows="3"></textarea>
+
+            <label for="admin-chair" data-i18n="adminChairLabel">Chaired by</label>
+            <input id="admin-chair" name="chair" type="text" maxlength="80">
+
+            <label for="admin-minutes-by" data-i18n="adminMinutesByLabel">Minutes taken by</label>
+            <input id="admin-minutes-by" name="minutesBy" type="text" maxlength="80">
+
+            <label for="admin-minutes" data-i18n="adminMinutesLabel">Summary (for closed meetings)</label>
+            <textarea id="admin-minutes" name="minutes" rows="4"></textarea>
+
+            <label for="admin-agenda" data-i18n="adminAgendaLabel">Agenda questions</label>
+            <p class="field-hint" data-i18n="adminAgendaHint">One question per line.</p>
+            <textarea id="admin-agenda" name="agenda" rows="5" placeholder="Should we…&#10;Do we agree to…"></textarea>
+
+            <button type="submit" data-i18n="adminSave">Save meeting</button>
+            <p id="admin-notice" class="admin-notice" hidden></p>
+        </form>
+
+        <h2 data-i18n="adminMeetings">Meetings</h2>
+        <div id="admin-meetings"></div>
+    </main>
+
+    <footer>
+        <div class="footer-row">
+            <div class="lang-toggle" role="group" aria-label="Language">
+                <button type="button" class="lang-btn" data-lang="en">English</button>
+                <span class="lang-sep" aria-hidden="true">·</span>
+                <button type="button" class="lang-btn" data-lang="bm">BM</button>
+            </div>
+            <button type="button" class="theme-switch" data-theme-switch aria-label="Theme">
+                <span class="theme-switch-icon" aria-hidden="true"></span>
+            </button>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
