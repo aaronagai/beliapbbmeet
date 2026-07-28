@@ -3,6 +3,7 @@ const LANG_KEY = "belia-pbb-lang";
 const NAME_KEY = "belia-pbb-member-name";
 const THEME_KEY = "belia-pbb-theme";
 const MEETINGS_KEY = "belia-pbb-meetings-v1";
+const ADMIN_NOTICE_KEY = "belia-pbb-admin-notice";
 
 const I18N = {
     en: {
@@ -66,6 +67,7 @@ const I18N = {
         adminIntro: "Add and manage meetings for Belia PBB.",
         adminMeetings: "Meetings",
         adminAddMeeting: "Add meeting",
+        adminFormIntro: "Fill in the meeting details, then save.",
         adminNoMeetings: "No meetings yet.",
         adminTitleLabel: "Title",
         adminStartDateLabel: "Start date",
@@ -83,11 +85,12 @@ const I18N = {
         adminSave: "Save meeting",
         adminEdit: "Edit",
         adminCancelEdit: "Cancel",
-        adminUpdate: "Update meeting",
+        adminUpdate: "Edit meeting",
         adminUpdated: "Meeting updated.",
         adminDelete: "Delete",
         adminSaved: "Meeting saved.",
         adminHome: "← Meeting space",
+        adminBackToList: "← Meetings",
         adminView: "Open",
     },
     bm: {
@@ -151,6 +154,7 @@ const I18N = {
         adminIntro: "Tambah dan urus mesyuarat untuk Belia PBB.",
         adminMeetings: "Mesyuarat",
         adminAddMeeting: "Tambah mesyuarat",
+        adminFormIntro: "Isikan butiran mesyuarat, kemudian simpan.",
         adminNoMeetings: "Belum ada mesyuarat.",
         adminTitleLabel: "Tajuk",
         adminStartDateLabel: "Tarikh mula",
@@ -168,11 +172,12 @@ const I18N = {
         adminSave: "Simpan mesyuarat",
         adminEdit: "Edit",
         adminCancelEdit: "Batal",
-        adminUpdate: "Kemas kini mesyuarat",
+        adminUpdate: "Edit mesyuarat",
         adminUpdated: "Mesyuarat dikemas kini.",
         adminDelete: "Padam",
         adminSaved: "Mesyuarat disimpan.",
         adminHome: "← Ruang mesyuarat",
+        adminBackToList: "← Mesyuarat",
         adminView: "Buka",
     },
 };
@@ -609,6 +614,11 @@ function discussionUrl(id) {
     return `discussion.html?id=${encodeURIComponent(id)}`;
 }
 
+function adminMeetingUrl(id) {
+    if (!id) return "admin-meeting.html";
+    return `admin-meeting.html?id=${encodeURIComponent(id)}`;
+}
+
 function getMeetingIdFromQuery() {
     return new URLSearchParams(window.location.search).get("id");
 }
@@ -625,7 +635,11 @@ function isDiscussionPage() {
     return Boolean(document.getElementById("discussion-title"));
 }
 
-function isAdminPage() {
+function isAdminListPage() {
+    return Boolean(document.getElementById("admin-meetings"));
+}
+
+function isAdminMeetingPage() {
     return Boolean(document.getElementById("admin-form"));
 }
 
@@ -1070,22 +1084,18 @@ function escapeHtml(value) {
         .replaceAll('"', "&quot;");
 }
 
-function renderAdminPage() {
+function renderAdminListPage() {
     applyStaticCopy(t("adminPageTitle"));
 
-    const form = document.getElementById("admin-form");
-    const editingId = form?.dataset.editingId || "";
-    const saveBtn = form?.querySelector('button[type="submit"]');
-    if (saveBtn) {
-        saveBtn.textContent = editingId ? t("adminUpdate") : t("adminSave");
+    const notice = document.getElementById("admin-notice");
+    if (notice) {
+        const pending = sessionStorage.getItem(ADMIN_NOTICE_KEY);
+        if (pending === "saved" || pending === "updated") {
+            notice.hidden = false;
+            notice.textContent = pending === "updated" ? t("adminUpdated") : t("adminSaved");
+            sessionStorage.removeItem(ADMIN_NOTICE_KEY);
+        }
     }
-    const heading = document.getElementById("admin-form-heading");
-    if (heading) {
-        heading.textContent = editingId ? t("adminUpdate") : t("adminAddMeeting");
-    }
-
-    const addQuestionBtn = document.getElementById("admin-add-question");
-    if (addQuestionBtn) addQuestionBtn.textContent = t("adminAddQuestion");
 
     const list = document.getElementById("admin-meetings");
     if (!list) return;
@@ -1109,7 +1119,7 @@ function renderAdminPage() {
                 <span class="meeting-meta"> · ${escapeHtml(statusLabel)}</span>
             </span>
             <span class="admin-meeting-actions">
-                <button type="button" class="text-btn" data-edit-meeting="${escapeHtml(meeting.id)}">${escapeHtml(t("adminEdit"))}</button>
+                <a class="text-btn" href="${adminMeetingUrl(meeting.id)}">${escapeHtml(t("adminEdit"))}</a>
                 <button type="button" class="text-btn" data-delete-meeting="${escapeHtml(meeting.id)}">${escapeHtml(t("adminDelete"))}</button>
             </span>
         `;
@@ -1118,39 +1128,50 @@ function renderAdminPage() {
     list.appendChild(ul);
 }
 
-function setupAdminForm() {
+function renderAdminMeetingPage() {
+    const editingId = getMeetingIdFromQuery();
+    const meeting = editingId ? findMeeting(editingId) : null;
+    const isEdit = Boolean(meeting);
+
+    applyStaticCopy(isEdit ? t("adminPageTitle") : t("adminPageTitle"));
+
+    const heading = document.getElementById("admin-form-heading");
+    if (heading) heading.textContent = isEdit ? t("adminUpdate") : t("adminAddMeeting");
+
+    const saveBtn = document.querySelector('#admin-form button[type="submit"]');
+    if (saveBtn) saveBtn.textContent = isEdit ? t("adminUpdate") : t("adminSave");
+
+    const addQuestionBtn = document.getElementById("admin-add-question");
+    if (addQuestionBtn) addQuestionBtn.textContent = t("adminAddQuestion");
+
+    document.title = `${isEdit ? t("adminUpdate") : t("adminAddMeeting")} · Belia PBB`;
+}
+
+function setupAdminListPage() {
+    const list = document.getElementById("admin-meetings");
+    if (!list || list.dataset.bound === "true") return;
+    list.dataset.bound = "true";
+
+    list.addEventListener("click", (event) => {
+        const deleteBtn = event.target.closest("[data-delete-meeting]");
+        if (!deleteBtn) return;
+        const id = deleteBtn.getAttribute("data-delete-meeting");
+        if (!id) return;
+        deleteMeeting(id);
+        renderAdminListPage();
+    });
+}
+
+function setupAdminMeetingForm() {
     const form = document.getElementById("admin-form");
     if (!form || form.dataset.bound === "true") return;
     form.dataset.bound = "true";
 
-    const composer = document.getElementById("admin-composer");
-    const showAddBtn = document.getElementById("admin-show-add");
     const startDateInput = document.getElementById("admin-start-date");
     const endDateInput = document.getElementById("admin-end-date");
     const questionsRoot = document.getElementById("admin-questions");
-    const cancelBtn = document.getElementById("admin-cancel-edit");
-
-    function setComposerOpen(open) {
-        if (!composer) return;
-        composer.hidden = !open;
-        if (showAddBtn) showAddBtn.setAttribute("aria-expanded", open ? "true" : "false");
-    }
-
-    function openComposer(meeting = null) {
-        fillForm(meeting);
-        setComposerOpen(true);
-        const notice = document.getElementById("admin-notice");
-        if (notice) notice.hidden = true;
-        composer?.scrollIntoView({ behavior: "smooth", block: "start" });
-        document.getElementById("admin-title")?.focus();
-    }
-
-    function closeComposer() {
-        fillForm(null);
-        setComposerOpen(false);
-        const notice = document.getElementById("admin-notice");
-        if (notice) notice.hidden = true;
-    }
+    const editingId = getMeetingIdFromQuery();
+    const meeting = editingId ? findMeeting(editingId) : null;
 
     function renumberQuestions() {
         if (!questionsRoot) return;
@@ -1201,29 +1222,37 @@ function setupAdminForm() {
         });
     }
 
-    function fillForm(meeting) {
-        form.dataset.editingId = meeting?.id || "";
+    function fillForm(current) {
+        form.dataset.editingId = current?.id || "";
         const today = defaultDateLabel();
-        document.getElementById("admin-title").value = meeting ? localized(meeting.title) : "";
-        document.getElementById("admin-start-date").value = meeting
-            ? localized(meetingStartDate(meeting)) || today
+        document.getElementById("admin-title").value = current ? localized(current.title) : "";
+        document.getElementById("admin-start-date").value = current
+            ? localized(meetingStartDate(current)) || today
             : today;
-        document.getElementById("admin-end-date").value = meeting
-            ? localized(meetingEndDate(meeting)) || today
+        document.getElementById("admin-end-date").value = current
+            ? localized(meetingEndDate(current)) || today
             : today;
-        document.getElementById("admin-summary").value = meeting ? localized(meeting.summary) : "";
-        document.getElementById("admin-chair").value = meeting?.chair || "";
-        document.getElementById("admin-minutes-by").value = meeting?.minutesBy || "";
+        document.getElementById("admin-summary").value = current ? localized(current.summary) : "";
+        document.getElementById("admin-chair").value = current?.chair || "";
+        document.getElementById("admin-minutes-by").value = current?.minutesBy || "";
         resetQuestions(
-            meeting?.items?.length
-                ? meeting.items.map((item) => localized(item.question))
+            current?.items?.length
+                ? current.items.map((item) => localized(item.question))
                 : [""]
         );
-        const saveBtn = form.querySelector('button[type="submit"]');
-        if (saveBtn) saveBtn.textContent = meeting ? t("adminUpdate") : t("adminSave");
-        const heading = document.getElementById("admin-form-heading");
-        if (heading) heading.textContent = meeting ? t("adminUpdate") : t("adminAddMeeting");
     }
+
+    if (editingId && !meeting) {
+        fillForm(null);
+        const heading = document.getElementById("admin-form-heading");
+        if (heading) heading.textContent = t("notFound");
+        const intro = document.getElementById("admin-form-intro");
+        if (intro) intro.textContent = t("notFound");
+        form.hidden = true;
+        return;
+    }
+
+    fillForm(meeting);
 
     if (startDateInput && !startDateInput.value) {
         startDateInput.value = defaultDateLabel();
@@ -1234,13 +1263,6 @@ function setupAdminForm() {
 
     if (questionsRoot && !questionsRoot.children.length) {
         resetQuestions([""]);
-    }
-
-    setComposerOpen(false);
-    if (showAddBtn) {
-        showAddBtn.setAttribute("aria-expanded", "false");
-        showAddBtn.setAttribute("aria-controls", "admin-composer");
-        showAddBtn.addEventListener("click", () => openComposer(null));
     }
 
     form.addEventListener("click", (event) => {
@@ -1269,32 +1291,6 @@ function setupAdminForm() {
         if (input) input.focus();
     });
 
-    if (cancelBtn) {
-        cancelBtn.addEventListener("click", () => {
-            closeComposer();
-        });
-    }
-
-    document.getElementById("admin-meetings")?.addEventListener("click", (event) => {
-        const editBtn = event.target.closest("[data-edit-meeting]");
-        if (editBtn) {
-            const id = editBtn.getAttribute("data-edit-meeting");
-            const meeting = findMeeting(id);
-            if (!meeting) return;
-            openComposer(meeting);
-            return;
-        }
-
-        const deleteBtn = event.target.closest("[data-delete-meeting]");
-        if (deleteBtn) {
-            const id = deleteBtn.getAttribute("data-delete-meeting");
-            if (!id) return;
-            deleteMeeting(id);
-            if (form.dataset.editingId === id) closeComposer();
-            renderAdminPage();
-        }
-    });
-
     form.addEventListener("submit", (event) => {
         event.preventDefault();
         const title = document.getElementById("admin-title")?.value || "";
@@ -1319,25 +1315,20 @@ function setupAdminForm() {
             questions,
         };
 
-        const editingId = form.dataset.editingId || "";
-        if (editingId) updateMeetingFromForm(editingId, payload);
+        const id = form.dataset.editingId || "";
+        if (id) updateMeetingFromForm(id, payload);
         else createMeetingFromForm(payload);
 
-        fillForm(null);
-        setComposerOpen(false);
-
-        const notice = document.getElementById("admin-notice");
-        if (notice) {
-            notice.hidden = false;
-            notice.textContent = editingId ? t("adminUpdated") : t("adminSaved");
-        }
-        renderAdminPage();
+        sessionStorage.setItem(ADMIN_NOTICE_KEY, id ? "updated" : "saved");
+        window.location.href = "admin.html";
     });
 }
 
 function renderAll() {
-    if (isAdminPage()) {
-        renderAdminPage();
+    if (isAdminMeetingPage()) {
+        renderAdminMeetingPage();
+    } else if (isAdminListPage()) {
+        renderAdminListPage();
     } else if (isDiscussionPage()) {
         renderDiscussionPage();
     } else if (isMeetingPage()) {
@@ -1433,6 +1424,7 @@ setupLangToggle();
 setupThemeToggle();
 setupNameGate();
 setupAttendeesDialog();
-setupAdminForm();
+setupAdminListPage();
+setupAdminMeetingForm();
 applyTheme();
 renderAll();

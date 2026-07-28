@@ -506,6 +506,9 @@ a:hover {
 }
 
 .admin-add-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     padding: 0 2px;
     border: 0;
     background: transparent;
@@ -513,11 +516,30 @@ a:hover {
     font-size: 22px;
     line-height: 1;
     color: var(--muted);
+    text-decoration: none;
     cursor: pointer;
 }
 
 .admin-add-btn:hover {
     color: var(--text);
+}
+
+.admin-form-actions .text-btn {
+    text-decoration: none;
+}
+
+.admin-form-actions a.text-btn:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.admin-meeting-actions a.text-btn {
+    text-decoration: none;
+}
+
+.admin-meeting-actions a.text-btn:hover {
+    text-decoration: underline;
+    text-underline-offset: 2px;
 }
 
 .admin-composer {
