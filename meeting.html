@@ -15,15 +15,32 @@
 <body>
     <main>
         <p class="back"><a href="index.html" data-i18n="back">← All meetings</a></p>
-        <h1 id="meeting-title">Meeting</h1>
-        <p class="updated" id="meeting-date"></p>
-        <p id="meeting-summary"></p>
 
-        <h2 data-i18n="agenda">Agenda</h2>
-        <div id="agenda"></div>
+        <section id="name-gate" class="name-gate" hidden>
+            <h1 data-i18n="joinTitle">Join this meeting</h1>
+            <p class="updated" data-i18n="joinHint">Enter your name so we can record who said what.</p>
+            <form id="name-form" class="name-form">
+                <label for="member-name" data-i18n="nameLabel">Your name</label>
+                <input id="member-name" name="name" type="text" autocomplete="name" required maxlength="80">
+                <button type="submit" data-i18n="continue">Continue</button>
+            </form>
+        </section>
 
-        <h2 data-i18n="notes">Notes</h2>
-        <div id="notes"></div>
+        <section id="meeting-content" hidden>
+            <p class="member-bar">
+                <span id="member-status"></span>
+                <button type="button" id="change-name" class="text-btn" data-i18n="changeName">Change</button>
+            </p>
+            <h1 id="meeting-title">Meeting</h1>
+            <p class="updated" id="meeting-date"></p>
+            <p id="meeting-summary"></p>
+
+            <h2 data-i18n="agenda">Agenda</h2>
+            <div id="agenda"></div>
+
+            <h2 data-i18n="notes">Notes</h2>
+            <div id="notes"></div>
+        </section>
     </main>
 
     <footer>
