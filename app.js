@@ -1,6 +1,7 @@
 const STORAGE_KEY = "belia-pbb-meeting-space-v1";
 const LANG_KEY = "belia-pbb-lang";
 const NAME_KEY = "belia-pbb-member-name";
+const THEME_KEY = "belia-pbb-theme";
 
 const I18N = {
     en: {
@@ -53,6 +54,9 @@ const I18N = {
         roleVoted: "Voted",
         roleCommented: "Commented",
         roleJoined: "Joined",
+        themeLight: "Light",
+        themeDark: "Dark",
+        themeSystem: "System",
     },
     bm: {
         title: "Ruang Mesyuarat Belia PBB",
@@ -104,6 +108,9 @@ const I18N = {
         roleVoted: "Mengundi",
         roleCommented: "Berkomen",
         roleJoined: "Menyertai",
+        themeLight: "Cerah",
+        themeDark: "Gelap",
+        themeSystem: "Sistem",
     },
 };
 
@@ -210,6 +217,32 @@ function getLang() {
 
 function setLang(lang) {
     localStorage.setItem(LANG_KEY, lang === "bm" ? "bm" : "en");
+}
+
+function getThemePref() {
+    const saved = localStorage.getItem(THEME_KEY);
+    return saved === "light" || saved === "dark" || saved === "system" ? saved : "system";
+}
+
+function setThemePref(pref) {
+    localStorage.setItem(THEME_KEY, pref);
+}
+
+function resolveTheme(pref) {
+    if (pref === "light" || pref === "dark") return pref;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function applyTheme(pref = getThemePref()) {
+    const resolved = resolveTheme(pref);
+    document.documentElement.dataset.theme = resolved;
+    document.documentElement.dataset.themePref = pref;
+
+    document.querySelectorAll(".theme-btn").forEach((btn) => {
+        const active = btn.dataset.themeOpt === pref;
+        btn.classList.toggle("active", active);
+        btn.setAttribute("aria-pressed", active ? "true" : "false");
+    });
 }
 
 function t(key) {
@@ -355,6 +388,8 @@ function applyStaticCopy(pageTitle) {
         btn.classList.toggle("active", btn.dataset.lang === lang);
         btn.setAttribute("aria-pressed", btn.dataset.lang === lang ? "true" : "false");
     });
+
+    applyTheme();
 }
 
 function renderHomeMeetings() {
@@ -723,6 +758,27 @@ function setupLangToggle() {
     });
 }
 
+function setupThemeToggle() {
+    document.querySelectorAll(".theme-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const pref = btn.dataset.themeOpt;
+            if (!pref || pref === getThemePref()) return;
+            setThemePref(pref);
+            applyTheme(pref);
+        });
+    });
+
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => {
+        if (getThemePref() === "system") applyTheme("system");
+    };
+    if (typeof media.addEventListener === "function") {
+        media.addEventListener("change", onChange);
+    } else if (typeof media.addListener === "function") {
+        media.addListener(onChange);
+    }
+}
+
 function setupNameGate() {
     const form = document.getElementById("name-form");
     const changeBtn = document.getElementById("change-name");
@@ -774,6 +830,8 @@ function setupAttendeesDialog() {
 }
 
 setupLangToggle();
+setupThemeToggle();
 setupNameGate();
 setupAttendeesDialog();
+applyTheme();
 renderAll();
