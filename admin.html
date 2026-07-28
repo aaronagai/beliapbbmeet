@@ -25,48 +25,55 @@
         <h1 data-i18n="adminTitle">Admin</h1>
         <p class="updated" data-i18n="adminIntro">Add and manage meetings for Belia PBB.</p>
 
-        <h2 id="admin-form-heading" data-i18n="adminAddMeeting">Add meeting</h2>
-        <form id="admin-form" class="admin-form" novalidate>
-            <label for="admin-title" data-i18n="adminTitleLabel">Title</label>
-            <input id="admin-title" name="title" type="text" required maxlength="120">
+        <div class="admin-section-head">
+            <h2 data-i18n="adminMeetings">Meetings</h2>
+            <button type="button" id="admin-show-add" class="admin-add-btn" data-i18n-aria="adminAddMeeting" aria-label="Add meeting">+</button>
+        </div>
 
-            <div class="admin-date-row">
-                <div class="admin-date-field">
-                    <label for="admin-start-date" data-i18n="adminStartDateLabel">Start date</label>
-                    <input id="admin-start-date" name="startDate" type="text" required maxlength="40">
+        <div id="admin-composer" class="admin-composer" hidden>
+            <h2 id="admin-form-heading" data-i18n="adminAddMeeting">Add meeting</h2>
+            <form id="admin-form" class="admin-form" novalidate>
+                <label for="admin-title" data-i18n="adminTitleLabel">Title</label>
+                <input id="admin-title" name="title" type="text" required maxlength="120">
+
+                <div class="admin-date-row">
+                    <div class="admin-date-field">
+                        <label for="admin-start-date" data-i18n="adminStartDateLabel">Start date</label>
+                        <input id="admin-start-date" name="startDate" type="text" required maxlength="40">
+                    </div>
+                    <div class="admin-date-field">
+                        <label for="admin-end-date" data-i18n="adminEndDateLabel">Finish date</label>
+                        <input id="admin-end-date" name="endDate" type="text" required maxlength="40">
+                    </div>
                 </div>
-                <div class="admin-date-field">
-                    <label for="admin-end-date" data-i18n="adminEndDateLabel">Finish date</label>
-                    <input id="admin-end-date" name="endDate" type="text" required maxlength="40">
+
+                <label for="admin-summary" data-i18n="adminSummaryLabel">Short description</label>
+                <textarea id="admin-summary" name="summary" rows="3"></textarea>
+
+                <label for="admin-chair" data-i18n="adminChairLabel">Chaired by</label>
+                <input id="admin-chair" name="chair" type="text" maxlength="80">
+
+                <label for="admin-minutes-by" data-i18n="adminMinutesByLabel">Minutes taken by</label>
+                <input id="admin-minutes-by" name="minutesBy" type="text" maxlength="80">
+
+                <label for="admin-minutes" data-i18n="adminMinutesLabel">Summary (for closed meetings)</label>
+                <textarea id="admin-minutes" name="minutes" rows="4"></textarea>
+
+                <div class="agenda-builder">
+                    <span class="agenda-builder-label" data-i18n="adminAgendaLabel">Agenda questions</span>
+                    <div id="admin-questions" class="admin-questions"></div>
+                    <button type="button" id="admin-add-question" class="secondary-btn" data-i18n="adminAddQuestion">+ Add question</button>
                 </div>
-            </div>
 
-            <label for="admin-summary" data-i18n="adminSummaryLabel">Short description</label>
-            <textarea id="admin-summary" name="summary" rows="3"></textarea>
+                <div class="admin-form-actions">
+                    <button type="submit" data-i18n="adminSave">Save meeting</button>
+                    <button type="button" id="admin-cancel-edit" class="text-btn" data-i18n="adminCancelEdit">Cancel</button>
+                </div>
+            </form>
+        </div>
 
-            <label for="admin-chair" data-i18n="adminChairLabel">Chaired by</label>
-            <input id="admin-chair" name="chair" type="text" maxlength="80">
+        <p id="admin-notice" class="admin-notice" hidden></p>
 
-            <label for="admin-minutes-by" data-i18n="adminMinutesByLabel">Minutes taken by</label>
-            <input id="admin-minutes-by" name="minutesBy" type="text" maxlength="80">
-
-            <label for="admin-minutes" data-i18n="adminMinutesLabel">Summary (for closed meetings)</label>
-            <textarea id="admin-minutes" name="minutes" rows="4"></textarea>
-
-            <div class="agenda-builder">
-                <span class="agenda-builder-label" data-i18n="adminAgendaLabel">Agenda questions</span>
-                <div id="admin-questions" class="admin-questions"></div>
-                <button type="button" id="admin-add-question" class="secondary-btn" data-i18n="adminAddQuestion">+ Add question</button>
-            </div>
-
-            <div class="admin-form-actions">
-                <button type="submit" data-i18n="adminSave">Save meeting</button>
-                <button type="button" id="admin-cancel-edit" class="text-btn" data-i18n="adminCancelEdit" hidden>Cancel edit</button>
-            </div>
-            <p id="admin-notice" class="admin-notice" hidden></p>
-        </form>
-
-        <h2 data-i18n="adminMeetings">Meetings</h2>
         <div id="admin-meetings"></div>
     </main>
 

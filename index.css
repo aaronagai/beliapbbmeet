@@ -492,6 +492,40 @@ a:hover {
     margin-bottom: 12px;
 }
 
+.admin-section-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-top: 28px;
+}
+
+.admin-section-head h2 {
+    margin: 0;
+}
+
+.admin-add-btn {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.admin-add-btn:hover {
+    color: var(--text);
+}
+
+.admin-composer {
+    margin: 8px 0 20px;
+}
+
+.admin-composer h2 {
+    margin-top: 8px;
+}
+
 .admin-form label {
     margin-top: 10px;
     font-size: 13px;

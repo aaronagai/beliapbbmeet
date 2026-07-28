@@ -83,7 +83,7 @@ const I18N = {
         adminQuestionLabel: (n) => `Question ${n}`,
         adminSave: "Save meeting",
         adminEdit: "Edit",
-        adminCancelEdit: "Cancel edit",
+        adminCancelEdit: "Cancel",
         adminUpdate: "Update meeting",
         adminUpdated: "Meeting updated.",
         adminDelete: "Delete",
@@ -169,7 +169,7 @@ const I18N = {
         adminQuestionLabel: (n) => `Soalan ${n}`,
         adminSave: "Simpan mesyuarat",
         adminEdit: "Edit",
-        adminCancelEdit: "Batal edit",
+        adminCancelEdit: "Batal",
         adminUpdate: "Kemas kini mesyuarat",
         adminUpdated: "Mesyuarat dikemas kini.",
         adminDelete: "Padam",
@@ -650,6 +650,12 @@ function applyStaticCopy(pageTitle) {
         if (typeof value === "string") el.textContent = value;
     });
 
+    document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
+        const key = el.getAttribute("data-i18n-aria");
+        const value = t(key);
+        if (typeof value === "string") el.setAttribute("aria-label", value);
+    });
+
     document.querySelectorAll(".lang-btn").forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.lang === lang);
         btn.setAttribute("aria-pressed", btn.dataset.lang === lang ? "true" : "false");
@@ -1122,10 +1128,34 @@ function setupAdminForm() {
     if (!form || form.dataset.bound === "true") return;
     form.dataset.bound = "true";
 
+    const composer = document.getElementById("admin-composer");
+    const showAddBtn = document.getElementById("admin-show-add");
     const startDateInput = document.getElementById("admin-start-date");
     const endDateInput = document.getElementById("admin-end-date");
     const questionsRoot = document.getElementById("admin-questions");
     const cancelBtn = document.getElementById("admin-cancel-edit");
+
+    function setComposerOpen(open) {
+        if (!composer) return;
+        composer.hidden = !open;
+        if (showAddBtn) showAddBtn.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+
+    function openComposer(meeting = null) {
+        fillForm(meeting);
+        setComposerOpen(true);
+        const notice = document.getElementById("admin-notice");
+        if (notice) notice.hidden = true;
+        composer?.scrollIntoView({ behavior: "smooth", block: "start" });
+        document.getElementById("admin-title")?.focus();
+    }
+
+    function closeComposer() {
+        fillForm(null);
+        setComposerOpen(false);
+        const notice = document.getElementById("admin-notice");
+        if (notice) notice.hidden = true;
+    }
 
     function renumberQuestions() {
         if (!questionsRoot) return;
@@ -1171,7 +1201,7 @@ function setupAdminForm() {
         if (!questionsRoot) return;
         questionsRoot.innerHTML = "";
         const list = values.length ? values : [""];
-        list.forEach((value, index) => {
+        list.forEach((value) => {
             addQuestionField(value, { focus: false });
         });
     }
@@ -1197,7 +1227,6 @@ function setupAdminForm() {
                 ? meeting.items.map((item) => localized(item.question))
                 : [""]
         );
-        if (cancelBtn) cancelBtn.hidden = !meeting;
         const saveBtn = form.querySelector('button[type="submit"]');
         if (saveBtn) saveBtn.textContent = meeting ? t("adminUpdate") : t("adminSave");
         const heading = document.getElementById("admin-form-heading");
@@ -1213,6 +1242,13 @@ function setupAdminForm() {
 
     if (questionsRoot && !questionsRoot.children.length) {
         resetQuestions([""]);
+    }
+
+    setComposerOpen(false);
+    if (showAddBtn) {
+        showAddBtn.setAttribute("aria-expanded", "false");
+        showAddBtn.setAttribute("aria-controls", "admin-composer");
+        showAddBtn.addEventListener("click", () => openComposer(null));
     }
 
     form.addEventListener("click", (event) => {
@@ -1243,9 +1279,7 @@ function setupAdminForm() {
 
     if (cancelBtn) {
         cancelBtn.addEventListener("click", () => {
-            fillForm(null);
-            const notice = document.getElementById("admin-notice");
-            if (notice) notice.hidden = true;
+            closeComposer();
         });
     }
 
@@ -1255,8 +1289,7 @@ function setupAdminForm() {
             const id = editBtn.getAttribute("data-edit-meeting");
             const meeting = findMeeting(id);
             if (!meeting) return;
-            fillForm(meeting);
-            form.scrollIntoView({ behavior: "smooth", block: "start" });
+            openComposer(meeting);
             return;
         }
 
@@ -1265,7 +1298,7 @@ function setupAdminForm() {
             const id = deleteBtn.getAttribute("data-delete-meeting");
             if (!id) return;
             deleteMeeting(id);
-            if (form.dataset.editingId === id) fillForm(null);
+            if (form.dataset.editingId === id) closeComposer();
             renderAdminPage();
         }
     });
@@ -1301,6 +1334,7 @@ function setupAdminForm() {
         else createMeetingFromForm(payload);
 
         fillForm(null);
+        setComposerOpen(false);
 
         const notice = document.getElementById("admin-notice");
         if (notice) {
