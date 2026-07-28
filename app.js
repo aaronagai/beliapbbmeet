@@ -2,6 +2,7 @@ const STORAGE_KEY = "belia-pbb-meeting-space-v1";
 const LANG_KEY = "belia-pbb-lang";
 const NAME_KEY = "belia-pbb-member-name";
 const THEME_KEY = "belia-pbb-theme";
+const MEETINGS_KEY = "belia-pbb-meetings-v1";
 
 const I18N = {
     en: {
@@ -60,6 +61,28 @@ const I18N = {
         backToMeeting: "← Back to meeting",
         discussionPageTitle: (name) => `${name} · Discussion · Belia PBB`,
         noMinutes: "No summary recorded yet.",
+        adminTitle: "Admin",
+        adminPageTitle: "Admin · Belia PBB",
+        adminIntro: "Add and manage meetings for Belia PBB.",
+        adminMeetings: "Meetings",
+        adminAddMeeting: "Add meeting",
+        adminNoMeetings: "No meetings yet.",
+        adminTitleLabel: "Title",
+        adminDateLabel: "Date",
+        adminStatusLabel: "Status",
+        adminStatusActive: "Active",
+        adminStatusClosed: "Closed",
+        adminSummaryLabel: "Short description",
+        adminChairLabel: "Chaired by",
+        adminMinutesByLabel: "Minutes taken by",
+        adminMinutesLabel: "Summary (for closed meetings)",
+        adminAgendaLabel: "Agenda questions",
+        adminAgendaHint: "One question per line.",
+        adminSave: "Save meeting",
+        adminDelete: "Delete",
+        adminSaved: "Meeting saved.",
+        adminHome: "← Meeting space",
+        adminView: "Open",
     },
     bm: {
         title: "Ruang Mesyuarat Belia PBB",
@@ -117,10 +140,32 @@ const I18N = {
         backToMeeting: "← Kembali ke mesyuarat",
         discussionPageTitle: (name) => `${name} · Perbincangan · Belia PBB`,
         noMinutes: "Belum ada ringkasan direkod.",
+        adminTitle: "Admin",
+        adminPageTitle: "Admin · Belia PBB",
+        adminIntro: "Tambah dan urus mesyuarat untuk Belia PBB.",
+        adminMeetings: "Mesyuarat",
+        adminAddMeeting: "Tambah mesyuarat",
+        adminNoMeetings: "Belum ada mesyuarat.",
+        adminTitleLabel: "Tajuk",
+        adminDateLabel: "Tarikh",
+        adminStatusLabel: "Status",
+        adminStatusActive: "Aktif",
+        adminStatusClosed: "Ditutup",
+        adminSummaryLabel: "Penerangan ringkas",
+        adminChairLabel: "Dipengerusikan oleh",
+        adminMinutesByLabel: "Minit diambil oleh",
+        adminMinutesLabel: "Ringkasan (untuk mesyuarat ditutup)",
+        adminAgendaLabel: "Soalan agenda",
+        adminAgendaHint: "Satu soalan setiap baris.",
+        adminSave: "Simpan mesyuarat",
+        adminDelete: "Padam",
+        adminSaved: "Mesyuarat disimpan.",
+        adminHome: "← Ruang mesyuarat",
+        adminView: "Buka",
     },
 };
 
-const MEETINGS = [
+const DEFAULT_MEETINGS = [
     {
         id: "kickoff-2026",
         status: "active",
@@ -219,6 +264,98 @@ const MEETINGS = [
         ],
     },
 ];
+
+function cloneMeetings(meetings) {
+    return JSON.parse(JSON.stringify(meetings));
+}
+
+function getMeetings() {
+    try {
+        const raw = localStorage.getItem(MEETINGS_KEY);
+        if (!raw) {
+            localStorage.setItem(MEETINGS_KEY, JSON.stringify(DEFAULT_MEETINGS));
+            return cloneMeetings(DEFAULT_MEETINGS);
+        }
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : cloneMeetings(DEFAULT_MEETINGS);
+    } catch {
+        return cloneMeetings(DEFAULT_MEETINGS);
+    }
+}
+
+function saveMeetings(meetings) {
+    localStorage.setItem(MEETINGS_KEY, JSON.stringify(meetings));
+}
+
+function slugify(value) {
+    return String(value || "")
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "")
+        .slice(0, 48) || `meeting-${Date.now().toString(36)}`;
+}
+
+function uniqueMeetingId(title, meetings) {
+    const base = slugify(title) || `meeting-${Date.now().toString(36)}`;
+    let id = base;
+    let n = 2;
+    const existing = new Set(meetings.map((m) => m.id));
+    while (existing.has(id)) {
+        id = `${base}-${n}`;
+        n += 1;
+    }
+    return id;
+}
+
+function bilingual(value) {
+    const text = String(value || "").trim();
+    return { en: text, bm: text };
+}
+
+function createMeetingFromForm({
+    title,
+    date,
+    status,
+    summary,
+    chair,
+    minutesBy,
+    minutes,
+    agendaText,
+}) {
+    const meetings = getMeetings();
+    const id = uniqueMeetingId(title, meetings);
+    const questions = String(agendaText || "")
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+    const meeting = {
+        id,
+        status: status === "closed" ? "closed" : "active",
+        date: bilingual(date),
+        title: bilingual(title),
+        summary: bilingual(summary),
+        chair: String(chair || "").trim(),
+        minutesBy: String(minutesBy || "").trim(),
+        items: questions.map((question, index) => ({
+            id: `q${index + 1}`,
+            question: bilingual(question),
+        })),
+    };
+
+    const minutesText = String(minutes || "").trim();
+    if (minutesText) meeting.minutes = bilingual(minutesText);
+
+    meetings.unshift(meeting);
+    saveMeetings(meetings);
+    return meeting;
+}
+
+function deleteMeeting(id) {
+    const next = getMeetings().filter((meeting) => meeting.id !== id);
+    saveMeetings(next);
+}
 
 function getLang() {
     const saved = localStorage.getItem(LANG_KEY);
@@ -407,7 +544,7 @@ function getMeetingIdFromQuery() {
 }
 
 function findMeeting(id) {
-    return MEETINGS.find((meeting) => meeting.id === id) || null;
+    return getMeetings().find((meeting) => meeting.id === id) || null;
 }
 
 function isMeetingPage() {
@@ -416,6 +553,10 @@ function isMeetingPage() {
 
 function isDiscussionPage() {
     return Boolean(document.getElementById("discussion-title"));
+}
+
+function isAdminPage() {
+    return Boolean(document.getElementById("admin-form"));
 }
 
 function applyStaticCopy(pageTitle) {
@@ -445,8 +586,8 @@ function renderHomeMeetings() {
     activeRoot.innerHTML = "";
     closedRoot.innerHTML = "";
 
-    const active = MEETINGS.filter((m) => m.status === "active");
-    const closed = MEETINGS.filter((m) => m.status === "closed");
+    const active = getMeetings().filter((m) => m.status === "active");
+    const closed = getMeetings().filter((m) => m.status === "closed");
 
     if (!active.length) {
         activeRoot.innerHTML = `<p class="empty">${escapeHtml(t("noActive"))}</p>`;
@@ -853,8 +994,110 @@ function escapeHtml(value) {
         .replaceAll('"', "&quot;");
 }
 
+function renderAdminPage() {
+    applyStaticCopy(t("adminPageTitle"));
+
+    const statusActive = document.querySelector('#admin-status option[value="active"]');
+    const statusClosed = document.querySelector('#admin-status option[value="closed"]');
+    if (statusActive) statusActive.textContent = t("adminStatusActive");
+    if (statusClosed) statusClosed.textContent = t("adminStatusClosed");
+
+    const list = document.getElementById("admin-meetings");
+    if (!list) return;
+    list.innerHTML = "";
+
+    const meetings = getMeetings();
+    if (!meetings.length) {
+        list.innerHTML = `<p class="empty">${escapeHtml(t("adminNoMeetings"))}</p>`;
+        return;
+    }
+
+    const ul = document.createElement("ul");
+    ul.className = "list";
+    meetings.forEach((meeting) => {
+        const li = document.createElement("li");
+        const statusLabel =
+            meeting.status === "closed" ? t("adminStatusClosed") : t("adminStatusActive");
+        li.innerHTML = `
+            <span class="list-title">
+                <a href="${meetingUrl(meeting.id)}">${escapeHtml(localized(meeting.title))}</a>
+                <span class="meeting-meta"> · ${escapeHtml(statusLabel)}</span>
+            </span>
+            <button type="button" class="text-btn" data-delete-meeting="${escapeHtml(meeting.id)}">${escapeHtml(t("adminDelete"))}</button>
+        `;
+        ul.appendChild(li);
+    });
+    list.appendChild(ul);
+
+    list.querySelectorAll("[data-delete-meeting]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const id = btn.getAttribute("data-delete-meeting");
+            if (!id) return;
+            deleteMeeting(id);
+            renderAdminPage();
+        });
+    });
+}
+
+function setupAdminForm() {
+    const form = document.getElementById("admin-form");
+    if (!form) return;
+
+    const dateInput = document.getElementById("admin-date");
+    if (dateInput && !dateInput.value) {
+        dateInput.value = new Date().toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "short",
+            year: "numeric",
+        });
+    }
+
+    form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const title = document.getElementById("admin-title")?.value || "";
+        const date = document.getElementById("admin-date")?.value || "";
+        const status = document.getElementById("admin-status")?.value || "active";
+        const summary = document.getElementById("admin-summary")?.value || "";
+        const chair = document.getElementById("admin-chair")?.value || "";
+        const minutesBy = document.getElementById("admin-minutes-by")?.value || "";
+        const minutes = document.getElementById("admin-minutes")?.value || "";
+        const agendaText = document.getElementById("admin-agenda")?.value || "";
+
+        if (!title.trim()) return;
+
+        createMeetingFromForm({
+            title,
+            date,
+            status,
+            summary,
+            chair,
+            minutesBy,
+            minutes,
+            agendaText,
+        });
+
+        form.reset();
+        if (dateInput) {
+            dateInput.value = new Date().toLocaleDateString("en-GB", {
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+            });
+        }
+
+        const notice = document.getElementById("admin-notice");
+        if (notice) {
+            notice.hidden = false;
+            notice.textContent = t("adminSaved");
+        }
+        renderAdminPage();
+    });
+}
+
 function renderAll() {
-    if (isDiscussionPage()) {
+    if (isAdminPage()) {
+        renderAdminPage();
+    } else if (isDiscussionPage()) {
         renderDiscussionPage();
     } else if (isMeetingPage()) {
         renderMeetingPage();
@@ -949,5 +1192,6 @@ setupLangToggle();
 setupThemeToggle();
 setupNameGate();
 setupAttendeesDialog();
+setupAdminForm();
 applyTheme();
 renderAll();

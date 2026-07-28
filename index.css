@@ -486,6 +486,73 @@ a:hover {
     border-bottom: 1px solid var(--border);
 }
 
+.admin-form {
+    display: grid;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.admin-form label {
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.admin-form label:first-child {
+    margin-top: 0;
+}
+
+.admin-form input,
+.admin-form select,
+.admin-form textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    font: inherit;
+    color: var(--text);
+}
+
+.admin-form input:focus,
+.admin-form select:focus,
+.admin-form textarea:focus {
+    outline: none;
+    border-color: var(--text);
+}
+
+.admin-form textarea {
+    resize: vertical;
+}
+
+.admin-form button[type="submit"] {
+    justify-self: start;
+    margin-top: 12px;
+    padding: 6px 12px;
+    border: 1px solid var(--btn-bg);
+    background: var(--btn-bg);
+    font: inherit;
+    font-size: 13px;
+    color: var(--btn-text);
+    cursor: pointer;
+}
+
+.admin-form button[type="submit"]:hover {
+    background: var(--btn-hover);
+    border-color: var(--btn-hover);
+}
+
+.field-hint {
+    margin: 0;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.admin-notice {
+    margin: 10px 0 0;
+    font-size: 13px;
+    color: var(--muted);
+}
+
 footer {
     max-width: 600px;
     margin: 48px auto 0;
