@@ -47,6 +47,16 @@ const I18N = {
         chairedBy: "This meeting is chaired by:",
         minutesBy: "Minutes taken by:",
         roleUnset: "—",
+        attendees: "Attendees",
+        attendeesTitle: "Attendees",
+        attendeesHint: "People who contributed to this meeting.",
+        noAttendees: "No attendees yet.",
+        close: "Close",
+        roleChair: "Chair",
+        roleMinutes: "Minutes",
+        roleVoted: "Voted",
+        roleCommented: "Commented",
+        roleJoined: "Joined",
     },
     bm: {
         title: "Ruang Mesyuarat Belia PBB",
@@ -92,6 +102,16 @@ const I18N = {
         chairedBy: "Mesyuarat ini dipengerusikan oleh:",
         minutesBy: "Minit diambil oleh:",
         roleUnset: "—",
+        attendees: "Hadirin",
+        attendeesTitle: "Hadirin",
+        attendeesHint: "Orang yang menyumbang dalam mesyuarat ini.",
+        noAttendees: "Belum ada hadirin.",
+        close: "Tutup",
+        roleChair: "Pengerusi",
+        roleMinutes: "Minit",
+        roleVoted: "Mengundi",
+        roleCommented: "Berkomen",
+        roleJoined: "Menyertai",
     },
 };
 
@@ -395,6 +415,80 @@ function getMeetingRoles(meeting, state) {
     };
 }
 
+function collectAttendees(meeting, state, currentMember) {
+    const people = new Map();
+
+    function add(name, role) {
+        const cleaned = (name || "").trim();
+        if (!cleaned) return;
+        const key = cleaned.toLowerCase();
+        if (!people.has(key)) {
+            people.set(key, { name: cleaned, roles: [] });
+        }
+        const entry = people.get(key);
+        if (role && !entry.roles.includes(role)) entry.roles.push(role);
+    }
+
+    const roles = getMeetingRoles(meeting, state);
+    add(roles.chair, t("roleChair"));
+    add(roles.minutesBy, t("roleMinutes"));
+    add(currentMember, t("roleJoined"));
+
+    const votePrefix = `${meeting.id}::`;
+    Object.keys(state.votes || {}).forEach((key) => {
+        if (!key.startsWith(votePrefix)) return;
+        const entry = normalizeVote(state.votes[key]);
+        if (entry) add(entry.name, t("roleVoted"));
+    });
+
+    Object.keys(state.comments || {}).forEach((key) => {
+        if (!key.startsWith(votePrefix)) return;
+        (state.comments[key] || []).forEach((comment) => {
+            add(comment.name, t("roleCommented"));
+        });
+    });
+
+    return [...people.values()].sort((a, b) =>
+        a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
+    );
+}
+
+function renderAttendeesList(meeting, state, currentMember) {
+    const list = document.getElementById("attendees-list");
+    if (!list) return;
+    list.innerHTML = "";
+
+    const attendees = collectAttendees(meeting, state, currentMember);
+    if (!attendees.length) {
+        list.innerHTML = `<li class="empty-item">${escapeHtml(t("noAttendees"))}</li>`;
+        return;
+    }
+
+    attendees.forEach((person) => {
+        const li = document.createElement("li");
+        const roles = person.roles.length ? person.roles.join(" · ") : "";
+        li.innerHTML = `
+            <span class="list-title">${escapeHtml(person.name)}</span>
+            ${roles ? `<span class="meeting-meta">${escapeHtml(roles)}</span>` : ""}
+        `;
+        list.appendChild(li);
+    });
+}
+
+function openAttendeesDialog() {
+    const dialog = document.getElementById("attendees-dialog");
+    if (!dialog) return;
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open", "open");
+}
+
+function closeAttendeesDialog() {
+    const dialog = document.getElementById("attendees-dialog");
+    if (!dialog) return;
+    if (typeof dialog.close === "function") dialog.close();
+    else dialog.removeAttribute("open");
+}
+
 function renderMeetingRoles(meeting, state, locked) {
     const roles = getMeetingRoles(meeting, state);
     const chairEl = document.getElementById("meeting-chair");
@@ -474,6 +568,7 @@ function renderMeetingPage() {
         : localized(meeting.date);
     if (rolesEl) rolesEl.hidden = false;
     renderMeetingRoles(meeting, state, locked);
+    renderAttendeesList(meeting, state, memberName);
     summaryEl.textContent = localized(meeting.summary);
 
     const voterId = getVoterId();
@@ -665,6 +760,28 @@ function setupNameGate() {
     }
 }
 
+function setupAttendeesDialog() {
+    const openBtn = document.getElementById("attendees-open");
+    const closeBtn = document.getElementById("attendees-close");
+    const dialog = document.getElementById("attendees-dialog");
+    if (!openBtn || !dialog) return;
+
+    openBtn.addEventListener("click", () => {
+        openAttendeesDialog();
+    });
+
+    if (closeBtn) {
+        closeBtn.addEventListener("click", () => {
+            closeAttendeesDialog();
+        });
+    }
+
+    dialog.addEventListener("click", (event) => {
+        if (event.target === dialog) closeAttendeesDialog();
+    });
+}
+
 setupLangToggle();
 setupNameGate();
+setupAttendeesDialog();
 renderAll();

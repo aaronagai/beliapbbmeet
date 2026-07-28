@@ -32,6 +32,9 @@
                 <button type="button" id="change-name" class="text-btn" data-i18n="changeName">Change</button>
             </p>
             <h1 id="meeting-title">Meeting</h1>
+            <p class="attendees-link-row">
+                <button type="button" id="attendees-open" class="attendees-link">• <span data-i18n="attendees">Attendees</span></button>
+            </p>
             <p class="updated" id="meeting-date"></p>
             <div class="meeting-roles" id="meeting-roles">
                 <div class="role">
@@ -49,6 +52,15 @@
             <div id="agenda"></div>
         </section>
     </main>
+
+    <dialog id="attendees-dialog" class="attendees-dialog">
+        <div class="attendees-dialog-header">
+            <h2 data-i18n="attendeesTitle">Attendees</h2>
+            <button type="button" id="attendees-close" class="text-btn" data-i18n="close">Close</button>
+        </div>
+        <p class="attendees-dialog-hint" data-i18n="attendeesHint">People who contributed to this meeting.</p>
+        <ul id="attendees-list" class="list"></ul>
+    </dialog>
 
     <footer>
         <div class="lang-toggle" role="group" aria-label="Language">
