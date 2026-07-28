@@ -70,7 +70,6 @@ const I18N = {
         adminTitleLabel: "Title",
         adminStartDateLabel: "Start date",
         adminEndDateLabel: "Finish date",
-        adminStatusLabel: "Status",
         adminStatusActive: "Active",
         adminStatusClosed: "Closed",
         adminSummaryLabel: "Short description",
@@ -157,7 +156,6 @@ const I18N = {
         adminTitleLabel: "Tajuk",
         adminStartDateLabel: "Tarikh mula",
         adminEndDateLabel: "Tarikh tamat",
-        adminStatusLabel: "Status",
         adminStatusActive: "Aktif",
         adminStatusClosed: "Ditutup",
         adminSummaryLabel: "Penerangan ringkas",
@@ -360,7 +358,6 @@ function createMeetingFromForm({
     title,
     startDate,
     endDate,
-    status,
     summary,
     chair,
     minutesBy,
@@ -378,7 +375,7 @@ function createMeetingFromForm({
 
     const meeting = {
         id,
-        status: status === "closed" ? "closed" : "active",
+        status: "active",
         startDate: start,
         endDate: end,
         title: bilingual(title),
@@ -413,7 +410,6 @@ function updateMeetingFromForm(id, payload) {
     const end = bilingual(payload.endDate || payload.startDate);
     const updated = {
         ...current,
-        status: payload.status === "closed" ? "closed" : "active",
         startDate: start,
         endDate: end,
         title: bilingual(payload.title),
@@ -1081,11 +1077,6 @@ function escapeHtml(value) {
 function renderAdminPage() {
     applyStaticCopy(t("adminPageTitle"));
 
-    const statusActive = document.querySelector('#admin-status option[value="active"]');
-    const statusClosed = document.querySelector('#admin-status option[value="closed"]');
-    if (statusActive) statusActive.textContent = t("adminStatusActive");
-    if (statusClosed) statusClosed.textContent = t("adminStatusClosed");
-
     const saveBtn = document.querySelector('#admin-form button[type="submit"]');
     const editingId = document.getElementById("admin-form")?.dataset.editingId || "";
     if (saveBtn) {
@@ -1195,7 +1186,6 @@ function setupAdminForm() {
         document.getElementById("admin-end-date").value = meeting
             ? localized(meetingEndDate(meeting)) || today
             : today;
-        document.getElementById("admin-status").value = meeting?.status || "active";
         document.getElementById("admin-summary").value = meeting ? localized(meeting.summary) : "";
         document.getElementById("admin-chair").value = meeting?.chair || "";
         document.getElementById("admin-minutes-by").value = meeting?.minutesBy || "";
@@ -1285,7 +1275,6 @@ function setupAdminForm() {
         const title = document.getElementById("admin-title")?.value || "";
         const startDate = document.getElementById("admin-start-date")?.value || "";
         const endDate = document.getElementById("admin-end-date")?.value || "";
-        const status = document.getElementById("admin-status")?.value || "active";
         const summary = document.getElementById("admin-summary")?.value || "";
         const chair = document.getElementById("admin-chair")?.value || "";
         const minutesBy = document.getElementById("admin-minutes-by")?.value || "";
@@ -1300,7 +1289,6 @@ function setupAdminForm() {
             title,
             startDate,
             endDate,
-            status,
             summary,
             chair,
             minutesBy,
