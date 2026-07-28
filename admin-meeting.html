@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Admin · Belia PBB</title>
+
+    <meta charset="UTF-8">
+    <meta name="description" content="Belia PBB meeting admin">
+    <meta name="author" content="Belia PBB">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script>
+        (function () {
+            var pref = localStorage.getItem("belia-pbb-theme") || "system";
+            var dark = pref === "dark" || (pref === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+            document.documentElement.dataset.theme = dark ? "dark" : "light";
+            document.documentElement.dataset.themePref = pref;
+        })();
+    </script>
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+    <main>
+        <p class="back"><a href="admin.html" data-i18n="adminBackToList">← Meetings</a></p>
+        <h1 id="admin-form-heading" data-i18n="adminAddMeeting">Add meeting</h1>
+        <p class="updated" id="admin-form-intro" data-i18n="adminFormIntro">Fill in the meeting details, then save.</p>
+
+        <form id="admin-form" class="admin-form" novalidate>
+            <label for="admin-title" data-i18n="adminTitleLabel">Title</label>
+            <input id="admin-title" name="title" type="text" required maxlength="120">
+
+            <div class="admin-date-row">
+                <div class="admin-date-field">
+                    <label for="admin-start-date" data-i18n="adminStartDateLabel">Start date</label>
+                    <input id="admin-start-date" name="startDate" type="text" required maxlength="40">
+                </div>
+                <div class="admin-date-field">
+                    <label for="admin-end-date" data-i18n="adminEndDateLabel">Finish date</label>
+                    <input id="admin-end-date" name="endDate" type="text" required maxlength="40">
+                </div>
+            </div>
+
+            <label for="admin-summary" data-i18n="adminSummaryLabel">Short description</label>
+            <textarea id="admin-summary" name="summary" rows="3"></textarea>
+
+            <label for="admin-chair" data-i18n="adminChairLabel">Chaired by</label>
+            <input id="admin-chair" name="chair" type="text" maxlength="80">
+
+            <label for="admin-minutes-by" data-i18n="adminMinutesByLabel">Minutes taken by</label>
+            <input id="admin-minutes-by" name="minutesBy" type="text" maxlength="80">
+
+            <div class="agenda-builder">
+                <span class="agenda-builder-label" data-i18n="adminAgendaLabel">Agenda questions</span>
+                <div id="admin-questions" class="admin-questions"></div>
+                <button type="button" id="admin-add-question" class="secondary-btn" data-i18n="adminAddQuestion">+ Add question</button>
+            </div>
+
+            <div class="admin-form-actions">
+                <button type="submit" data-i18n="adminSave">Save meeting</button>
+                <a href="admin.html" class="text-btn" data-i18n="adminCancelEdit">Cancel</a>
+            </div>
+        </form>
+    </main>
+
+    <footer>
+        <div class="footer-row">
+            <div class="lang-toggle" role="group" aria-label="Language">
+                <button type="button" class="lang-btn" data-lang="en">English</button>
+                <span class="lang-sep" aria-hidden="true">·</span>
+                <button type="button" class="lang-btn" data-lang="bm">BM</button>
+            </div>
+            <button type="button" class="theme-switch" data-theme-switch aria-label="Theme">
+                <span class="theme-switch-icon" aria-hidden="true"></span>
+            </button>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
