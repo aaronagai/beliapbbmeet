@@ -27,6 +27,26 @@ h1 {
     letter-spacing: -0.01em;
 }
 
+.attendees-link-row {
+    margin: 0 0 10px;
+}
+
+.attendees-link {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: 13px;
+    color: #999;
+    cursor: pointer;
+}
+
+.attendees-link:hover {
+    color: #111;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
 .updated {
     margin: 0 0 28px;
     font-size: 13px;
