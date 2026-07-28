@@ -2,10 +2,10 @@
 <html lang="en">
 
 <head>
-    <title>Meeting · Belia PBB</title>
+    <title>Discussion · Belia PBB</title>
 
     <meta charset="UTF-8">
-    <meta name="description" content="Belia PBB meeting">
+    <meta name="description" content="Belia PBB meeting discussion">
     <meta name="author" content="Belia PBB">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script>
@@ -21,7 +21,7 @@
 
 <body>
     <main>
-        <p class="back"><a href="index.html" data-i18n="back">← All meetings</a></p>
+        <p class="back"><a id="discussion-back" href="index.html" data-i18n="backToMeeting">← Back to meeting</a></p>
 
         <section id="name-gate" class="name-gate" hidden>
             <h1 data-i18n="joinTitle">Join this meeting</h1>
@@ -33,51 +33,19 @@
             </form>
         </section>
 
-        <section id="meeting-content" hidden>
+        <section id="discussion-content" hidden>
             <p class="member-bar">
                 <span id="member-status"></span>
                 <button type="button" id="change-name" class="text-btn" data-i18n="changeName">Change</button>
             </p>
-            <h1 id="meeting-title">Meeting</h1>
-            <p class="attendees-link-row">
-                <button type="button" id="attendees-open" class="attendees-link">• <span data-i18n="attendees">Attendees</span></button>
-            </p>
-            <p class="updated" id="meeting-date"></p>
-            <div class="meeting-roles" id="meeting-roles">
-                <div class="role">
-                    <span class="role-label" data-i18n="chairedBy">This meeting is chaired by:</span>
-                    <span class="role-value" id="meeting-chair"></span>
-                </div>
-                <div class="role">
-                    <span class="role-label" data-i18n="minutesBy">Minutes taken by:</span>
-                    <span class="role-value" id="meeting-minutes"></span>
-                </div>
-            </div>
+            <h1 id="discussion-title">Discussion</h1>
+            <p class="updated" id="discussion-date"></p>
+            <p id="discussion-summary"></p>
 
-            <div id="active-body">
-                <p id="meeting-summary"></p>
-                <h2 data-i18n="agenda">Agenda</h2>
-                <div id="agenda"></div>
-            </div>
-
-            <div id="closed-body" hidden>
-                <h2 data-i18n="minutesHeading">Minutes</h2>
-                <div id="minutes-body" class="minutes-body"></div>
-                <p class="discussion-action">
-                    <a id="open-discussion" class="primary-link" href="#">Open discussion</a>
-                </p>
-            </div>
+            <h2 data-i18n="discussionHeading">Discussion</h2>
+            <div id="discussion-agenda"></div>
         </section>
     </main>
-
-    <dialog id="attendees-dialog" class="attendees-dialog">
-        <div class="attendees-dialog-header">
-            <h2 data-i18n="attendeesTitle">Attendees</h2>
-            <button type="button" id="attendees-close" class="text-btn" data-i18n="close">Close</button>
-        </div>
-        <p class="attendees-dialog-hint" data-i18n="attendeesHint">People who contributed to this meeting.</p>
-        <ul id="attendees-list" class="list"></ul>
-    </dialog>
 
     <footer>
         <div class="footer-row">

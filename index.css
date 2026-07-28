@@ -430,12 +430,32 @@ a:hover {
     color: var(--muted);
 }
 
-.empty {
-    margin: 0;
-    padding: 10px 0;
-    color: var(--muted);
-    border-top: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
+.discussion-action {
+    margin: 28px 0 0;
+}
+
+.primary-link {
+    display: inline-block;
+    padding: 6px 12px;
+    border: 1px solid var(--btn-bg);
+    background: var(--btn-bg);
+    font-size: 13px;
+    color: var(--btn-text);
+    text-decoration: none;
+}
+
+.primary-link:hover {
+    background: var(--btn-hover);
+    border-color: var(--btn-hover);
+    text-decoration: none;
+}
+
+.minutes-body p {
+    margin: 0 0 18px;
+}
+
+.minutes-body p:last-child {
+    margin-bottom: 0;
 }
 
 footer {

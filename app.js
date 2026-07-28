@@ -57,6 +57,12 @@ const I18N = {
         themeLight: "Light",
         themeDark: "Dark",
         themeSystem: "System",
+        minutesHeading: "Minutes",
+        openDiscussion: "Open discussion",
+        discussionHeading: "Discussion",
+        backToMeeting: "← Back to meeting",
+        discussionPageTitle: (name) => `${name} · Discussion · Belia PBB`,
+        noMinutes: "No minutes recorded yet.",
     },
     bm: {
         title: "Ruang Mesyuarat Belia PBB",
@@ -111,6 +117,12 @@ const I18N = {
         themeLight: "Cerah",
         themeDark: "Gelap",
         themeSystem: "Sistem",
+        minutesHeading: "Minit",
+        openDiscussion: "Buka perbincangan",
+        discussionHeading: "Perbincangan",
+        backToMeeting: "← Kembali ke mesyuarat",
+        discussionPageTitle: (name) => `${name} · Perbincangan · Belia PBB`,
+        noMinutes: "Belum ada minit direkod.",
     },
 };
 
@@ -198,6 +210,10 @@ const MEETINGS = [
         },
         chair: "Sofia Tan",
         minutesBy: "Aina Rahman",
+        minutes: {
+            en: "The meeting agreed to keep the name “Belia PBB Meeting Space” for now. Two members voted Yes and one abstained. Aina noted that the name can be revisited later if needed.",
+            bm: "Mesyuarat bersetuju mengekalkan nama “Ruang Mesyuarat Belia PBB” buat masa ini. Dua ahli mengundi Ya dan seorang abstain. Aina mencatat bahawa nama boleh dinilai semula kemudian jika perlu.",
+        },
         items: [
             {
                 id: "keep-name",
@@ -361,6 +377,10 @@ function meetingUrl(id) {
     return `meeting.html?id=${encodeURIComponent(id)}`;
 }
 
+function discussionUrl(id) {
+    return `discussion.html?id=${encodeURIComponent(id)}`;
+}
+
 function getMeetingIdFromQuery() {
     return new URLSearchParams(window.location.search).get("id");
 }
@@ -371,6 +391,10 @@ function findMeeting(id) {
 
 function isMeetingPage() {
     return Boolean(document.getElementById("meeting-title"));
+}
+
+function isDiscussionPage() {
+    return Boolean(document.getElementById("discussion-title"));
 }
 
 function applyStaticCopy(pageTitle) {
@@ -559,6 +583,10 @@ function renderMeetingPage() {
     const agendaRoot = document.getElementById("agenda");
     const memberStatus = document.getElementById("member-status");
     const rolesEl = document.getElementById("meeting-roles");
+    const activeBody = document.getElementById("active-body");
+    const closedBody = document.getElementById("closed-body");
+    const minutesBody = document.getElementById("minutes-body");
+    const openDiscussion = document.getElementById("open-discussion");
     const memberName = getMemberName();
 
     if (!meeting) {
@@ -567,10 +595,13 @@ function renderMeetingPage() {
         content.hidden = false;
         titleEl.textContent = t("notFound");
         dateEl.textContent = "";
-        summaryEl.textContent = "";
-        agendaRoot.innerHTML = "";
+        if (summaryEl) summaryEl.textContent = "";
+        if (agendaRoot) agendaRoot.innerHTML = "";
+        if (minutesBody) minutesBody.innerHTML = "";
         memberStatus.textContent = "";
         if (rolesEl) rolesEl.hidden = true;
+        if (activeBody) activeBody.hidden = true;
+        if (closedBody) closedBody.hidden = true;
         return;
     }
 
@@ -596,10 +627,89 @@ function renderMeetingPage() {
     if (rolesEl) rolesEl.hidden = false;
     renderMeetingRoles(meeting, state, locked);
     renderAttendeesList(meeting, state, memberName);
+
+    if (locked) {
+        if (activeBody) activeBody.hidden = true;
+        if (closedBody) closedBody.hidden = false;
+        if (minutesBody) {
+            const minutesText = localized(meeting.minutes) || t("noMinutes");
+            minutesBody.innerHTML = minutesText
+                .split(/\n+/)
+                .filter(Boolean)
+                .map((para) => `<p>${escapeHtml(para)}</p>`)
+                .join("");
+        }
+        if (openDiscussion) {
+            openDiscussion.href = discussionUrl(meeting.id);
+            openDiscussion.textContent = t("openDiscussion");
+        }
+        return;
+    }
+
+    if (activeBody) activeBody.hidden = false;
+    if (closedBody) closedBody.hidden = true;
+    if (summaryEl) summaryEl.textContent = localized(meeting.summary);
+
+    const voterId = getVoterId();
+    if (agendaRoot) {
+        agendaRoot.innerHTML = "";
+        const agenda = document.createElement("ul");
+        agenda.className = "agenda";
+        meeting.items.forEach((item) => {
+            agenda.appendChild(renderAgendaItem(meeting, item, state, voterId, locked, memberName));
+        });
+        agendaRoot.appendChild(agenda);
+    }
+}
+
+function renderDiscussionPage() {
+    const meeting = findMeeting(getMeetingIdFromQuery());
+    const gate = document.getElementById("name-gate");
+    const content = document.getElementById("discussion-content");
+    const titleEl = document.getElementById("discussion-title");
+    const dateEl = document.getElementById("discussion-date");
+    const summaryEl = document.getElementById("discussion-summary");
+    const agendaRoot = document.getElementById("discussion-agenda");
+    const memberStatus = document.getElementById("member-status");
+    const backLink = document.getElementById("discussion-back");
+    const memberName = getMemberName();
+
+    if (backLink && meeting) {
+        backLink.href = meetingUrl(meeting.id);
+    }
+
+    if (!meeting) {
+        applyStaticCopy(t("pageTitle"));
+        if (gate) gate.hidden = true;
+        if (content) content.hidden = false;
+        titleEl.textContent = t("notFound");
+        dateEl.textContent = "";
+        summaryEl.textContent = "";
+        agendaRoot.innerHTML = "";
+        memberStatus.textContent = "";
+        return;
+    }
+
+    const title = localized(meeting.title);
+    applyStaticCopy(t("discussionPageTitle")(title));
+
+    if (!memberName) {
+        gate.hidden = false;
+        content.hidden = true;
+        return;
+    }
+
+    gate.hidden = true;
+    content.hidden = false;
+    memberStatus.textContent = t("joiningAs")(memberName);
+
+    const locked = true;
+    const state = loadState();
+    titleEl.textContent = title;
+    dateEl.textContent = `${localized(meeting.date)} · ${t("closedLabel")}`;
     summaryEl.textContent = localized(meeting.summary);
 
     const voterId = getVoterId();
-
     agendaRoot.innerHTML = "";
     const agenda = document.createElement("ul");
     agenda.className = "agenda";
@@ -739,7 +849,9 @@ function escapeHtml(value) {
 }
 
 function renderAll() {
-    if (isMeetingPage()) {
+    if (isDiscussionPage()) {
+        renderDiscussionPage();
+    } else if (isMeetingPage()) {
         renderMeetingPage();
     } else {
         applyStaticCopy();
