@@ -46,14 +46,11 @@ const I18N = {
         roleUnset: "—",
         attendees: "Attendees",
         attendeesTitle: "Attendees",
-        attendeesHint: "People who contributed to this meeting.",
+        attendeesHint: "People who joined this meeting.",
         noAttendees: "No attendees yet.",
         close: "Close",
         roleChair: "Chair",
         roleMinutes: "Minutes",
-        roleVoted: "Voted",
-        roleCommented: "Commented",
-        roleJoined: "Joined",
         themeLight: "Light",
         themeDark: "Dark",
         themeSystem: "System",
@@ -107,14 +104,11 @@ const I18N = {
         roleUnset: "—",
         attendees: "Hadirin",
         attendeesTitle: "Hadirin",
-        attendeesHint: "Orang yang menyumbang dalam mesyuarat ini.",
+        attendeesHint: "Orang yang menyertai mesyuarat ini.",
         noAttendees: "Belum ada hadirin.",
         close: "Tutup",
         roleChair: "Pengerusi",
         roleMinutes: "Minit",
-        roleVoted: "Mengundi",
-        roleCommented: "Berkomen",
-        roleJoined: "Menyertai",
         themeLight: "Cerah",
         themeDark: "Gelap",
         themeSystem: "Sistem",
@@ -323,6 +317,9 @@ function defaultState() {
             ],
         },
         roles: {},
+        attendees: {
+            "naming-space": ["Aina", "Daniel", "Sofia"],
+        },
     };
 }
 
@@ -336,6 +333,7 @@ function loadState() {
             notes: parsed.notes || {},
             comments: parsed.comments || {},
             roles: parsed.roles || {},
+            attendees: parsed.attendees || {},
         };
     } catch {
         return defaultState();
@@ -491,62 +489,46 @@ function getMeetingRoles(meeting, state) {
     };
 }
 
-function collectAttendees(meeting, state, currentMember) {
-    const people = new Map();
+function ensureJoined(meetingId, memberName) {
+    const name = (memberName || "").trim();
+    if (!meetingId || !name) return loadState();
 
-    function add(name, role) {
+    const state = loadState();
+    const existing = state.attendees[meetingId] || [];
+    const alreadyIn = existing.some((entry) => entry.toLowerCase() === name.toLowerCase());
+    if (alreadyIn) return state;
+
+    state.attendees[meetingId] = [...existing, name];
+    saveState(state);
+    return state;
+}
+
+function collectAttendees(meeting, state) {
+    const people = new Map();
+    (state.attendees[meeting.id] || []).forEach((name) => {
         const cleaned = (name || "").trim();
         if (!cleaned) return;
-        const key = cleaned.toLowerCase();
-        if (!people.has(key)) {
-            people.set(key, { name: cleaned, roles: [] });
-        }
-        const entry = people.get(key);
-        if (role && !entry.roles.includes(role)) entry.roles.push(role);
-    }
-
-    const roles = getMeetingRoles(meeting, state);
-    add(roles.chair, t("roleChair"));
-    add(roles.minutesBy, t("roleMinutes"));
-    add(currentMember, t("roleJoined"));
-
-    const votePrefix = `${meeting.id}::`;
-    Object.keys(state.votes || {}).forEach((key) => {
-        if (!key.startsWith(votePrefix)) return;
-        const entry = normalizeVote(state.votes[key]);
-        if (entry) add(entry.name, t("roleVoted"));
+        people.set(cleaned.toLowerCase(), cleaned);
     });
-
-    Object.keys(state.comments || {}).forEach((key) => {
-        if (!key.startsWith(votePrefix)) return;
-        (state.comments[key] || []).forEach((comment) => {
-            add(comment.name, t("roleCommented"));
-        });
-    });
-
     return [...people.values()].sort((a, b) =>
-        a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
+        a.localeCompare(b, undefined, { sensitivity: "base" })
     );
 }
 
-function renderAttendeesList(meeting, state, currentMember) {
+function renderAttendeesList(meeting, state) {
     const list = document.getElementById("attendees-list");
     if (!list) return;
     list.innerHTML = "";
 
-    const attendees = collectAttendees(meeting, state, currentMember);
+    const attendees = collectAttendees(meeting, state);
     if (!attendees.length) {
         list.innerHTML = `<li class="empty-item">${escapeHtml(t("noAttendees"))}</li>`;
         return;
     }
 
-    attendees.forEach((person) => {
+    attendees.forEach((name) => {
         const li = document.createElement("li");
-        const roles = person.roles.length ? person.roles.join(" · ") : "";
-        li.innerHTML = `
-            <span class="list-title">${escapeHtml(person.name)}</span>
-            ${roles ? `<span class="meeting-meta">${escapeHtml(roles)}</span>` : ""}
-        `;
+        li.innerHTML = `<span class="list-title">${escapeHtml(name)}</span>`;
         list.appendChild(li);
     });
 }
@@ -644,14 +626,14 @@ function renderMeetingPage() {
     memberStatus.textContent = t("joiningAs")(memberName);
 
     const locked = meeting.status === "closed";
-    const state = loadState();
+    const state = ensureJoined(meeting.id, memberName);
     titleEl.textContent = title;
     dateEl.textContent = locked
         ? `${localized(meeting.date)} · ${t("closedLabel")}`
         : localized(meeting.date);
     if (rolesEl) rolesEl.hidden = false;
     renderMeetingRoles(meeting, state, locked);
-    renderAttendeesList(meeting, state, memberName);
+    renderAttendeesList(meeting, state);
 
     if (locked) {
         if (activeBody) activeBody.hidden = true;
@@ -729,7 +711,7 @@ function renderDiscussionPage() {
     memberStatus.textContent = t("joiningAs")(memberName);
 
     const locked = true;
-    const state = loadState();
+    const state = ensureJoined(meeting.id, memberName);
     titleEl.textContent = title;
     dateEl.textContent = `${localized(meeting.date)} · ${t("closedLabel")}`;
     summaryEl.textContent = localized(meeting.summary);
