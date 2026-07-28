@@ -65,8 +65,7 @@ const I18N = {
         title: "Ruang Mesyuarat Belia PBB",
         pageTitle: "Ruang Mesyuarat Belia PBB",
         updated: "Dikemas kini 28 Jul 2026",
-        intro1:
-            "Ruang tenang untuk Belia PBB bermesyuarat secara tidak segerak — kemukakan topik, tinggalkan nota, dan undi bila keputusan diperlukan.",
+        intro1: "Satu tempat untuk setiap perbincangan.",
         intro2:
             "Tiada panggilan langsung diperlukan. Baca agenda, kongsikan pandangan, undi, dan kembali bila anda boleh.",
         activeMeetings: "Mesyuarat aktif",
