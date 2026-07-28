@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Meeting · Belia PBB</title>
+
+    <meta charset="UTF-8">
+    <meta name="description" content="Belia PBB meeting">
+    <meta name="author" content="Belia PBB">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+    <main>
+        <p class="back"><a href="index.html" data-i18n="back">← All meetings</a></p>
+        <h1 id="meeting-title">Meeting</h1>
+        <p class="updated" id="meeting-date"></p>
+        <p id="meeting-summary"></p>
+
+        <h2 data-i18n="agenda">Agenda</h2>
+        <div id="agenda"></div>
+
+        <h2 data-i18n="notes">Notes</h2>
+        <div id="notes"></div>
+    </main>
+
+    <footer>
+        <div class="lang-toggle" role="group" aria-label="Language">
+            <button type="button" class="lang-btn" data-lang="en">English</button>
+            <span class="lang-sep" aria-hidden="true">·</span>
+            <button type="button" class="lang-btn" data-lang="bm">BM</button>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+
+</html>
