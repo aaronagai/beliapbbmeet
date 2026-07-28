@@ -527,8 +527,7 @@ footer {
     border-bottom: 1px solid var(--border);
 }
 
-.lang-toggle,
-.theme-toggle {
+.lang-toggle {
     display: flex;
     align-items: center;
     gap: 8px;
@@ -536,8 +535,7 @@ footer {
     color: var(--muted);
 }
 
-.lang-btn,
-.theme-btn {
+.lang-btn {
     padding: 0;
     border: 0;
     background: none;
@@ -547,27 +545,52 @@ footer {
     cursor: pointer;
 }
 
-.lang-btn:hover,
-.theme-btn:hover {
+.lang-btn:hover {
     color: var(--text);
     text-decoration: underline;
     text-underline-offset: 2px;
 }
 
-.lang-btn.active,
-.theme-btn.active {
+.lang-btn.active {
     color: var(--text);
     cursor: default;
 }
 
-.lang-btn.active:hover,
-.theme-btn.active:hover {
+.lang-btn.active:hover {
     text-decoration: none;
 }
 
-.lang-sep,
-.theme-sep {
+.lang-sep {
     color: var(--sep);
+}
+
+.theme-switch {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--muted);
+    cursor: pointer;
+}
+
+.theme-switch:hover {
+    color: var(--text);
+}
+
+.theme-switch-icon {
+    display: inline-flex;
+    width: 16px;
+    height: 16px;
+}
+
+.theme-switch-icon svg {
+    width: 16px;
+    height: 16px;
+    display: block;
 }
 
 @media (max-width: 640px) {
