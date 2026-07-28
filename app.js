@@ -10,7 +10,7 @@ const I18N = {
         updated: "Updated Jul 28, 2026",
         intro1: "One place for every discussion.",
         intro2:
-            "No live call required. Read the agenda, add your view, cast your vote, and come back when you can.",
+            "A shared space for Belia PBB to discuss matters asynchronously. Raise agenda items, share updates, gather feedback, and reach decisions without scheduling a meeting.",
         activeMeetings: "Active meetings",
         closedMeetings: "Closed",
         noActive: "No active meetings.",
@@ -67,7 +67,7 @@ const I18N = {
         updated: "Dikemas kini 28 Jul 2026",
         intro1: "Satu tempat untuk setiap perbincangan.",
         intro2:
-            "Tiada panggilan langsung diperlukan. Baca agenda, kongsikan pandangan, undi, dan kembali bila anda boleh.",
+            "Ruang bersama untuk Belia PBB membincangkan perkara secara tidak segerak. Kemukakan agenda, kongsi kemas kini, kumpulkan maklum balas, dan buat keputusan tanpa perlu menjadualkan mesyuarat.",
         activeMeetings: "Mesyuarat aktif",
         closedMeetings: "Ditutup",
         noActive: "Tiada mesyuarat aktif.",
