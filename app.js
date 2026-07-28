@@ -75,7 +75,6 @@ const I18N = {
         adminSummaryLabel: "Short description",
         adminChairLabel: "Chaired by",
         adminMinutesByLabel: "Minutes taken by",
-        adminMinutesLabel: "Summary (for closed meetings)",
         adminAgendaLabel: "Agenda questions",
         adminAddQuestion: "+ Add question",
         adminQuestionPlaceholder: "Should we…",
@@ -161,7 +160,6 @@ const I18N = {
         adminSummaryLabel: "Penerangan ringkas",
         adminChairLabel: "Dipengerusikan oleh",
         adminMinutesByLabel: "Minit diambil oleh",
-        adminMinutesLabel: "Ringkasan (untuk mesyuarat ditutup)",
         adminAgendaLabel: "Soalan agenda",
         adminAddQuestion: "+ Tambah soalan",
         adminQuestionPlaceholder: "Patutkah kita…",
@@ -361,7 +359,6 @@ function createMeetingFromForm({
     summary,
     chair,
     minutesBy,
-    minutes,
     questions,
 }) {
     const meetings = getMeetings();
@@ -387,9 +384,6 @@ function createMeetingFromForm({
             question: bilingual(question),
         })),
     };
-
-    const minutesText = String(minutes || "").trim();
-    if (minutesText) meeting.minutes = bilingual(minutesText);
 
     meetings.unshift(meeting);
     saveMeetings(meetings);
@@ -422,10 +416,6 @@ function updateMeetingFromForm(id, payload) {
         })),
     };
     delete updated.date;
-
-    const minutesText = String(payload.minutes || "").trim();
-    if (minutesText) updated.minutes = bilingual(minutesText);
-    else delete updated.minutes;
 
     meetings[index] = updated;
     saveMeetings(meetings);
@@ -1224,9 +1214,6 @@ function setupAdminForm() {
         document.getElementById("admin-summary").value = meeting ? localized(meeting.summary) : "";
         document.getElementById("admin-chair").value = meeting?.chair || "";
         document.getElementById("admin-minutes-by").value = meeting?.minutesBy || "";
-        document.getElementById("admin-minutes").value = meeting?.minutes
-            ? localized(meeting.minutes)
-            : "";
         resetQuestions(
             meeting?.items?.length
                 ? meeting.items.map((item) => localized(item.question))
@@ -1316,7 +1303,6 @@ function setupAdminForm() {
         const summary = document.getElementById("admin-summary")?.value || "";
         const chair = document.getElementById("admin-chair")?.value || "";
         const minutesBy = document.getElementById("admin-minutes-by")?.value || "";
-        const minutes = document.getElementById("admin-minutes")?.value || "";
         const questions = [...document.querySelectorAll(".admin-question-input")].map(
             (input) => input.value
         );
@@ -1330,7 +1316,6 @@ function setupAdminForm() {
             summary,
             chair,
             minutesBy,
-            minutes,
             questions,
         };
 
