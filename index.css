@@ -4,14 +4,47 @@
     box-sizing: border-box;
 }
 
+:root,
+html[data-theme="light"] {
+    --bg: #ffffff;
+    --text: #111111;
+    --muted: #999999;
+    --border: #eeeeee;
+    --border-strong: #dddddd;
+    --border-soft: #f0f0f0;
+    --placeholder: #bbbbbb;
+    --btn-bg: #111111;
+    --btn-text: #ffffff;
+    --btn-hover: #333333;
+    --surface: #ffffff;
+    --sep: #cccccc;
+    --backdrop: rgba(0, 0, 0, 0.28);
+}
+
+html[data-theme="dark"] {
+    --bg: #111111;
+    --text: #f2f2f2;
+    --muted: #888888;
+    --border: #2a2a2a;
+    --border-strong: #3a3a3a;
+    --border-soft: #222222;
+    --placeholder: #666666;
+    --btn-bg: #f2f2f2;
+    --btn-text: #111111;
+    --btn-hover: #dddddd;
+    --surface: #171717;
+    --sep: #555555;
+    --backdrop: rgba(0, 0, 0, 0.55);
+}
+
 body {
     margin: 0;
     padding: 72px 32px 96px;
     font-family: -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Helvetica, Arial, sans-serif;
     font-size: 15px;
     line-height: 1.65;
-    color: #111;
-    background: #fff;
+    color: var(--text);
+    background: var(--bg);
     -webkit-font-smoothing: antialiased;
 }
 
@@ -37,12 +70,12 @@ h1 {
     background: none;
     font: inherit;
     font-size: 13px;
-    color: #999;
+    color: var(--muted);
     cursor: pointer;
 }
 
 .attendees-link:hover {
-    color: #111;
+    color: var(--text);
     text-decoration: underline;
     text-underline-offset: 2px;
 }
@@ -50,7 +83,7 @@ h1 {
 .updated {
     margin: 0 0 28px;
     font-size: 13px;
-    color: #999;
+    color: var(--muted);
 }
 
 .meeting-roles {
@@ -69,32 +102,32 @@ h1 {
 
 .role-label {
     font-size: 13px;
-    color: #999;
+    color: var(--muted);
 }
 
 .role-value {
     font-size: 15px;
-    color: #111;
+    color: var(--text);
 }
 
 .role-input {
     width: 100%;
     padding: 0;
     border: 0;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border);
     background: transparent;
     font: inherit;
     font-size: 15px;
-    color: #111;
+    color: var(--text);
 }
 
 .role-input:focus {
     outline: none;
-    border-bottom-color: #111;
+    border-bottom-color: var(--text);
 }
 
 .role-input::placeholder {
-    color: #bbb;
+    color: var(--placeholder);
 }
 
 p {
@@ -105,7 +138,7 @@ h2 {
     margin: 36px 0 10px;
     font-size: 13px;
     font-weight: 400;
-    color: #999;
+    color: var(--muted);
 }
 
 a {
@@ -128,11 +161,11 @@ a:hover {
     display: flex;
     align-items: baseline;
     padding: 10px 0;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border);
 }
 
 .list li:first-child {
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--border);
 }
 
 .list-title {
@@ -146,15 +179,15 @@ a:hover {
 .back {
     margin: 0 0 18px;
     font-size: 13px;
-    color: #999;
+    color: var(--muted);
 }
 
 .back a {
-    color: #999;
+    color: var(--muted);
 }
 
 .back a:hover {
-    color: #111;
+    color: var(--text);
 }
 
 .member-bar {
@@ -163,7 +196,7 @@ a:hover {
     gap: 10px;
     margin: 0 0 18px;
     font-size: 13px;
-    color: #999;
+    color: var(--muted);
 }
 
 .text-btn {
@@ -172,12 +205,12 @@ a:hover {
     background: none;
     font: inherit;
     font-size: 13px;
-    color: #999;
+    color: var(--muted);
     cursor: pointer;
 }
 
 .text-btn:hover {
-    color: #111;
+    color: var(--text);
     text-decoration: underline;
     text-underline-offset: 2px;
 }
@@ -190,40 +223,42 @@ a:hover {
 
 .name-form label {
     font-size: 13px;
-    color: #999;
+    color: var(--muted);
 }
 
 .name-form input {
     width: 100%;
     padding: 10px 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
     font: inherit;
-    color: #111;
+    color: var(--text);
 }
 
 .name-form input:focus {
     outline: none;
-    border-color: #111;
+    border-color: var(--text);
 }
 
 .name-form button {
     justify-self: start;
     padding: 6px 12px;
-    border: 1px solid #111;
-    background: #111;
+    border: 1px solid var(--btn-bg);
+    background: var(--btn-bg);
     font: inherit;
     font-size: 13px;
-    color: #fff;
+    color: var(--btn-text);
     cursor: pointer;
 }
 
 .name-form button:hover {
-    background: #333;
+    background: var(--btn-hover);
+    border-color: var(--btn-hover);
 }
 
 .meeting-meta {
     font-size: 13px;
-    color: #999;
+    color: var(--muted);
     white-space: nowrap;
 }
 
@@ -235,11 +270,11 @@ a:hover {
 
 .agenda-item {
     padding: 14px 0;
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid var(--border-soft);
 }
 
 .agenda-item:last-child {
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--border-soft);
 }
 
 .agenda-question {
@@ -256,22 +291,22 @@ a:hover {
 
 .vote-btn {
     padding: 6px 12px;
-    border: 1px solid #ddd;
-    background: #fff;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
     font: inherit;
     font-size: 13px;
-    color: #111;
+    color: var(--text);
     cursor: pointer;
 }
 
 .vote-btn:hover {
-    border-color: #111;
+    border-color: var(--text);
 }
 
 .vote-btn.selected {
-    border-color: #111;
-    background: #111;
-    color: #fff;
+    border-color: var(--btn-bg);
+    background: var(--btn-bg);
+    color: var(--btn-text);
 }
 
 .vote-btn:disabled {
@@ -281,13 +316,13 @@ a:hover {
 
 .vote-counts {
     font-size: 13px;
-    color: #999;
+    color: var(--muted);
     margin: 0 0 6px;
 }
 
 .vote-roster {
     font-size: 13px;
-    color: #999;
+    color: var(--muted);
     margin: 0 0 14px;
 }
 
@@ -298,7 +333,7 @@ a:hover {
 .comments-label {
     margin: 0 0 8px;
     font-size: 13px;
-    color: #999;
+    color: var(--muted);
 }
 
 .item-comments textarea {
@@ -307,29 +342,31 @@ a:hover {
     margin-top: 10px;
     margin-bottom: 8px;
     padding: 10px 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
     font: inherit;
-    color: #111;
+    color: var(--text);
     resize: vertical;
 }
 
 .item-comments textarea:focus {
     outline: none;
-    border-color: #111;
+    border-color: var(--text);
 }
 
 .item-comments button {
     padding: 6px 12px;
-    border: 1px solid #111;
-    background: #111;
+    border: 1px solid var(--btn-bg);
+    background: var(--btn-bg);
     font: inherit;
     font-size: 13px;
-    color: #fff;
+    color: var(--btn-text);
     cursor: pointer;
 }
 
 .item-comments button:hover {
-    background: #333;
+    background: var(--btn-hover);
+    border-color: var(--btn-hover);
 }
 
 .notes {
@@ -341,29 +378,31 @@ a:hover {
     min-height: 72px;
     margin-bottom: 8px;
     padding: 10px 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
     font: inherit;
-    color: #111;
+    color: var(--text);
     resize: vertical;
 }
 
 .notes textarea:focus {
     outline: none;
-    border-color: #111;
+    border-color: var(--text);
 }
 
 .notes button {
     padding: 6px 12px;
-    border: 1px solid #111;
-    background: #111;
+    border: 1px solid var(--btn-bg);
+    background: var(--btn-bg);
     font: inherit;
     font-size: 13px;
-    color: #fff;
+    color: var(--btn-text);
     cursor: pointer;
 }
 
 .notes button:hover {
-    background: #333;
+    background: var(--btn-hover);
+    border-color: var(--btn-hover);
 }
 
 .note-list {
@@ -374,12 +413,12 @@ a:hover {
 
 .note-list li {
     padding: 10px 0;
-    border-top: 1px solid #f0f0f0;
+    border-top: 1px solid var(--border-soft);
     font-size: 14px;
 }
 
 .note-list li.note-empty {
-    color: #999;
+    color: var(--muted);
     border-top: none;
     padding-top: 0;
 }
@@ -388,36 +427,44 @@ a:hover {
     display: block;
     margin-top: 4px;
     font-size: 12px;
-    color: #999;
+    color: var(--muted);
 }
 
 .empty {
     margin: 0;
     padding: 10px 0;
-    color: #999;
-    border-top: 1px solid #eee;
-    border-bottom: 1px solid #eee;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
 }
 
 footer {
     max-width: 600px;
     margin: 48px auto 0;
     padding-top: 18px;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--border);
+}
+
+.footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
 }
 
 .attendees-dialog {
     width: min(92vw, 420px);
     margin: auto;
     padding: 24px;
-    border: 1px solid #eee;
-    background: #fff;
-    color: #111;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
     font: inherit;
 }
 
 .attendees-dialog::backdrop {
-    background: rgba(0, 0, 0, 0.28);
+    background: var(--backdrop);
 }
 
 .attendees-dialog-header {
@@ -432,13 +479,13 @@ footer {
     margin: 0;
     font-size: 15px;
     font-weight: 600;
-    color: #111;
+    color: var(--text);
 }
 
 .attendees-dialog-hint {
     margin: 0 0 16px;
     font-size: 13px;
-    color: #999;
+    color: var(--muted);
 }
 
 .attendees-dialog .list {
@@ -447,46 +494,52 @@ footer {
 
 .attendees-dialog .list li.empty-item {
     display: block;
-    color: #999;
-    border-top: 1px solid #eee;
-    border-bottom: 1px solid #eee;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
 }
 
-.lang-toggle {
+.lang-toggle,
+.theme-toggle {
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 13px;
-    color: #999;
+    color: var(--muted);
 }
 
-.lang-btn {
+.lang-btn,
+.theme-btn {
     padding: 0;
     border: 0;
     background: none;
     font: inherit;
     font-size: 13px;
-    color: #999;
+    color: var(--muted);
     cursor: pointer;
 }
 
-.lang-btn:hover {
-    color: #111;
+.lang-btn:hover,
+.theme-btn:hover {
+    color: var(--text);
     text-decoration: underline;
     text-underline-offset: 2px;
 }
 
-.lang-btn.active {
-    color: #111;
+.lang-btn.active,
+.theme-btn.active {
+    color: var(--text);
     cursor: default;
 }
 
-.lang-btn.active:hover {
+.lang-btn.active:hover,
+.theme-btn.active:hover {
     text-decoration: none;
 }
 
-.lang-sep {
-    color: #ccc;
+.lang-sep,
+.theme-sep {
+    color: var(--sep);
 }
 
 @media (max-width: 640px) {
