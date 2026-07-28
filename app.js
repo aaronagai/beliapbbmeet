@@ -57,9 +57,6 @@ const I18N = {
         themeSystem: "System",
         themeSwitchLabel: (mode) => `Theme: ${mode}. Click to change.`,
         minutesHeading: "Summary",
-        minutesPlaceholder: "Write the meeting summary…",
-        saveMinutes: "Save summary",
-        minutesSaved: "Summary saved.",
         openDiscussion: "Open discussion",
         discussionHeading: "Discussion",
         backToMeeting: "← Back to meeting",
@@ -75,11 +72,13 @@ const I18N = {
         adminTitleLabel: "Title",
         adminStartDateLabel: "Start date",
         adminEndDateLabel: "Finish date",
+        adminStatusLabel: "Status",
         adminStatusActive: "Active",
         adminStatusClosed: "Closed",
         adminSummaryLabel: "Short description",
         adminChairLabel: "Chaired by",
         adminMinutesByLabel: "Minutes taken by",
+        adminMinutesLabel: "Summary",
         adminAgendaLabel: "Agenda questions",
         adminAddQuestion: "+ Add question",
         adminQuestionPlaceholder: "Should we…",
@@ -147,9 +146,6 @@ const I18N = {
         themeSystem: "Sistem",
         themeSwitchLabel: (mode) => `Tema: ${mode}. Klik untuk tukar.`,
         minutesHeading: "Ringkasan",
-        minutesPlaceholder: "Tulis ringkasan mesyuarat…",
-        saveMinutes: "Simpan ringkasan",
-        minutesSaved: "Ringkasan disimpan.",
         openDiscussion: "Buka perbincangan",
         discussionHeading: "Perbincangan",
         backToMeeting: "← Kembali ke mesyuarat",
@@ -165,11 +161,13 @@ const I18N = {
         adminTitleLabel: "Tajuk",
         adminStartDateLabel: "Tarikh mula",
         adminEndDateLabel: "Tarikh tamat",
+        adminStatusLabel: "Status",
         adminStatusActive: "Aktif",
         adminStatusClosed: "Ditutup",
         adminSummaryLabel: "Penerangan ringkas",
         adminChairLabel: "Dipengerusikan oleh",
         adminMinutesByLabel: "Minit diambil oleh",
+        adminMinutesLabel: "Ringkasan",
         adminAgendaLabel: "Soalan agenda",
         adminAddQuestion: "+ Tambah soalan",
         adminQuestionPlaceholder: "Patutkah kita…",
@@ -428,6 +426,16 @@ function updateMeetingFromForm(id, payload) {
     };
     delete updated.date;
 
+    if (payload.status === "closed" || payload.status === "active") {
+        updated.status = payload.status;
+    }
+
+    if (updated.status === "closed") {
+        const minutesText = String(payload.minutes || "").trim();
+        if (minutesText) updated.minutes = bilingual(minutesText);
+        else delete updated.minutes;
+    }
+
     meetings[index] = updated;
     saveMeetings(meetings);
     return updated;
@@ -436,19 +444,6 @@ function updateMeetingFromForm(id, payload) {
 function deleteMeeting(id) {
     const next = getMeetings().filter((meeting) => meeting.id !== id);
     saveMeetings(next);
-}
-
-function updateMeetingMinutes(id, text) {
-    const meetings = getMeetings();
-    const index = meetings.findIndex((meeting) => meeting.id === id);
-    if (index < 0) return null;
-
-    const minutesText = String(text || "").trim();
-    if (minutesText) meetings[index].minutes = bilingual(minutesText);
-    else delete meetings[index].minutes;
-
-    saveMeetings(meetings);
-    return meetings[index];
 }
 
 function getLang() {
@@ -859,9 +854,7 @@ function renderMeetingPage() {
     const rolesEl = document.getElementById("meeting-roles");
     const activeBody = document.getElementById("active-body");
     const closedBody = document.getElementById("closed-body");
-    const minutesInput = document.getElementById("minutes-input");
-    const saveMinutesBtn = document.getElementById("save-minutes");
-    const minutesNotice = document.getElementById("minutes-notice");
+    const minutesBody = document.getElementById("minutes-body");
     const openDiscussion = document.getElementById("open-discussion");
     const memberName = getMemberName();
 
@@ -873,8 +866,7 @@ function renderMeetingPage() {
         dateEl.textContent = "";
         if (summaryEl) summaryEl.textContent = "";
         if (agendaRoot) agendaRoot.innerHTML = "";
-        if (minutesInput && document.activeElement !== minutesInput) minutesInput.value = "";
-        if (minutesNotice) minutesNotice.hidden = true;
+        if (minutesBody) minutesBody.innerHTML = "";
         memberStatus.textContent = "";
         if (rolesEl) rolesEl.hidden = true;
         if (activeBody) activeBody.hidden = true;
@@ -908,10 +900,13 @@ function renderMeetingPage() {
     if (locked) {
         if (activeBody) activeBody.hidden = true;
         if (closedBody) closedBody.hidden = false;
-        if (saveMinutesBtn) saveMinutesBtn.textContent = t("saveMinutes");
-        if (minutesInput && document.activeElement !== minutesInput) {
-            minutesInput.value = localized(meeting.minutes) || "";
-            minutesInput.placeholder = t("minutesPlaceholder");
+        if (minutesBody) {
+            const minutesText = localized(meeting.minutes) || t("noMinutes");
+            minutesBody.innerHTML = minutesText
+                .split(/\n+/)
+                .filter(Boolean)
+                .map((para) => `<p>${escapeHtml(para)}</p>`)
+                .join("");
         }
         if (openDiscussion) {
             openDiscussion.href = discussionUrl(meeting.id);
@@ -1171,7 +1166,7 @@ function renderAdminMeetingPage() {
     const meeting = editingId ? findMeeting(editingId) : null;
     const isEdit = Boolean(meeting);
 
-    applyStaticCopy(isEdit ? t("adminPageTitle") : t("adminPageTitle"));
+    applyStaticCopy(t("adminPageTitle"));
 
     const heading = document.getElementById("admin-form-heading");
     if (heading) heading.textContent = isEdit ? t("adminUpdate") : t("adminAddMeeting");
@@ -1181,6 +1176,11 @@ function renderAdminMeetingPage() {
 
     const addQuestionBtn = document.getElementById("admin-add-question");
     if (addQuestionBtn) addQuestionBtn.textContent = t("adminAddQuestion");
+
+    const statusActive = document.querySelector('#admin-status option[value="active"]');
+    const statusClosed = document.querySelector('#admin-status option[value="closed"]');
+    if (statusActive) statusActive.textContent = t("adminStatusActive");
+    if (statusClosed) statusClosed.textContent = t("adminStatusClosed");
 
     document.title = `${isEdit ? t("adminUpdate") : t("adminAddMeeting")} · Belia PBB`;
 }
@@ -1207,9 +1207,20 @@ function setupAdminMeetingForm() {
 
     const startDateInput = document.getElementById("admin-start-date");
     const endDateInput = document.getElementById("admin-end-date");
+    const statusField = document.getElementById("admin-status-field");
+    const statusInput = document.getElementById("admin-status");
+    const minutesField = document.getElementById("admin-minutes-field");
+    const minutesInput = document.getElementById("admin-minutes");
     const questionsRoot = document.getElementById("admin-questions");
     const editingId = getMeetingIdFromQuery();
     const meeting = editingId ? findMeeting(editingId) : null;
+
+    function syncClosedFields() {
+        const isEdit = Boolean(form.dataset.editingId);
+        const isClosed = (statusInput?.value || "active") === "closed";
+        if (statusField) statusField.hidden = !isEdit;
+        if (minutesField) minutesField.hidden = !(isEdit && isClosed);
+    }
 
     function renumberQuestions() {
         if (!questionsRoot) return;
@@ -1273,11 +1284,16 @@ function setupAdminMeetingForm() {
         document.getElementById("admin-summary").value = current ? localized(current.summary) : "";
         document.getElementById("admin-chair").value = current?.chair || "";
         document.getElementById("admin-minutes-by").value = current?.minutesBy || "";
+        if (statusInput) statusInput.value = current?.status === "closed" ? "closed" : "active";
+        if (minutesInput) {
+            minutesInput.value = current?.minutes ? localized(current.minutes) : "";
+        }
         resetQuestions(
             current?.items?.length
                 ? current.items.map((item) => localized(item.question))
                 : [""]
         );
+        syncClosedFields();
     }
 
     if (editingId && !meeting) {
@@ -1301,6 +1317,12 @@ function setupAdminMeetingForm() {
 
     if (questionsRoot && !questionsRoot.children.length) {
         resetQuestions([""]);
+    }
+
+    if (statusInput) {
+        statusInput.addEventListener("change", () => {
+            syncClosedFields();
+        });
     }
 
     form.addEventListener("click", (event) => {
@@ -1337,6 +1359,8 @@ function setupAdminMeetingForm() {
         const summary = document.getElementById("admin-summary")?.value || "";
         const chair = document.getElementById("admin-chair")?.value || "";
         const minutesBy = document.getElementById("admin-minutes-by")?.value || "";
+        const status = statusInput?.value || "active";
+        const minutes = minutesInput?.value || "";
         const questions = [...document.querySelectorAll(".admin-question-input")].map(
             (input) => input.value
         );
@@ -1350,6 +1374,8 @@ function setupAdminMeetingForm() {
             summary,
             chair,
             minutesBy,
+            status,
+            minutes,
             questions,
         };
 
@@ -1458,30 +1484,10 @@ function setupAttendeesDialog() {
     });
 }
 
-function setupClosedSummaryBox() {
-    const saveBtn = document.getElementById("save-minutes");
-    const input = document.getElementById("minutes-input");
-    if (!saveBtn || !input || saveBtn.dataset.bound === "true") return;
-    saveBtn.dataset.bound = "true";
-
-    saveBtn.addEventListener("click", () => {
-        const meeting = findMeeting(getMeetingIdFromQuery());
-        if (!meeting || meeting.status !== "closed") return;
-
-        updateMeetingMinutes(meeting.id, input.value);
-        const notice = document.getElementById("minutes-notice");
-        if (notice) {
-            notice.hidden = false;
-            notice.textContent = t("minutesSaved");
-        }
-    });
-}
-
 setupLangToggle();
 setupThemeToggle();
 setupNameGate();
 setupAttendeesDialog();
-setupClosedSummaryBox();
 setupAdminListPage();
 setupAdminMeetingForm();
 applyTheme();

@@ -49,6 +49,19 @@
             <label for="admin-minutes-by" data-i18n="adminMinutesByLabel">Minutes taken by</label>
             <input id="admin-minutes-by" name="minutesBy" type="text" maxlength="80">
 
+            <div id="admin-status-field" class="admin-status-field" hidden>
+                <label for="admin-status" data-i18n="adminStatusLabel">Status</label>
+                <select id="admin-status" name="status">
+                    <option value="active">Active</option>
+                    <option value="closed">Closed</option>
+                </select>
+            </div>
+
+            <div id="admin-minutes-field" class="admin-minutes-field" hidden>
+                <label for="admin-minutes" data-i18n="adminMinutesLabel">Summary</label>
+                <textarea id="admin-minutes" name="minutes" rows="5" maxlength="4000"></textarea>
+            </div>
+
             <div class="agenda-builder">
                 <span class="agenda-builder-label" data-i18n="adminAgendaLabel">Agenda questions</span>
                 <div id="admin-questions" class="admin-questions"></div>
