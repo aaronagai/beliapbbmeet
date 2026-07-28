@@ -497,7 +497,11 @@ function renderAgendaItem(meeting, item, state, voterId, locked, memberName) {
         if (!locked) {
             btn.addEventListener("click", () => {
                 const next = loadState();
-                next.votes[myKey] = { choice, name: memberName };
+                if (myVote && myVote.choice === choice) {
+                    delete next.votes[myKey];
+                } else {
+                    next.votes[myKey] = { choice, name: memberName };
+                }
                 saveState(next);
                 renderAll();
             });
