@@ -54,7 +54,7 @@ main {
 }
 
 h1 {
-    margin: 0 0 6px;
+    margin: 0 0 10px;
     font-size: 18px;
     font-weight: 600;
     letter-spacing: -0.01em;
@@ -81,7 +81,7 @@ h1 {
 }
 
 .updated {
-    margin: 0 0 28px;
+    margin: 0 0 36px;
     font-size: 13px;
     color: var(--muted);
 }
@@ -135,7 +135,7 @@ p {
 }
 
 h2 {
-    margin: 36px 0 10px;
+    margin: 40px 0 14px;
     font-size: 13px;
     font-weight: 400;
     color: var(--muted);
@@ -180,7 +180,8 @@ a:hover {
 .list li {
     display: flex;
     align-items: baseline;
-    padding: 10px 0;
+    gap: 16px;
+    padding: 16px 0;
     border-bottom: 1px solid var(--border);
 }
 
@@ -197,7 +198,7 @@ a:hover {
 }
 
 .back {
-    margin: 0 0 18px;
+    margin: 0 0 24px;
     font-size: 13px;
     color: var(--muted);
 }
@@ -480,7 +481,7 @@ a:hover {
 
 .empty {
     margin: 0;
-    padding: 10px 0;
+    padding: 16px 0;
     color: var(--muted);
     border-top: 1px solid var(--border);
     border-bottom: 1px solid var(--border);
@@ -488,15 +489,16 @@ a:hover {
 
 .admin-form {
     display: grid;
-    gap: 8px;
+    gap: 10px;
     margin-bottom: 12px;
 }
 
 .admin-section-head {
     display: flex;
     align-items: baseline;
-    gap: 10px;
-    margin-top: 28px;
+    gap: 12px;
+    margin-top: 8px;
+    margin-bottom: 6px;
 }
 
 .admin-section-head h2 {
@@ -504,7 +506,7 @@ a:hover {
 }
 
 .admin-add-btn {
-    padding: 0;
+    padding: 0 2px;
     border: 0;
     background: transparent;
     font: inherit;
@@ -519,15 +521,16 @@ a:hover {
 }
 
 .admin-composer {
-    margin: 8px 0 20px;
+    margin: 16px 0 28px;
 }
 
 .admin-composer h2 {
-    margin-top: 8px;
+    margin-top: 0;
+    margin-bottom: 16px;
 }
 
 .admin-form label {
-    margin-top: 10px;
+    margin-top: 12px;
     font-size: 13px;
     color: var(--muted);
 }
@@ -539,8 +542,8 @@ a:hover {
 .admin-date-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-top: 10px;
+    gap: 14px;
+    margin-top: 12px;
 }
 
 .admin-date-field {
@@ -556,7 +559,7 @@ a:hover {
 .admin-form select,
 .admin-form textarea {
     width: 100%;
-    padding: 10px 12px;
+    padding: 11px 12px;
     border: 1px solid var(--border-strong);
     background: var(--surface);
     font: inherit;
@@ -599,8 +602,8 @@ a:hover {
 
 .agenda-builder {
     display: grid;
-    gap: 8px;
-    margin-top: 10px;
+    gap: 10px;
+    margin-top: 14px;
 }
 
 .agenda-builder-label {
@@ -610,7 +613,7 @@ a:hover {
 
 .admin-questions {
     display: grid;
-    gap: 8px;
+    gap: 12px;
 }
 
 .admin-question-row {
@@ -619,7 +622,7 @@ a:hover {
     grid-template-areas:
         "label label"
         "input remove";
-    gap: 6px 10px;
+    gap: 8px 12px;
     align-items: center;
 }
 
@@ -647,13 +650,13 @@ a:hover {
 .admin-form-actions {
     display: flex;
     align-items: center;
-    gap: 14px;
-    margin-top: 12px;
+    gap: 16px;
+    margin-top: 16px;
 }
 
 .admin-meeting-actions {
     display: flex;
-    gap: 12px;
+    gap: 18px;
     flex-shrink: 0;
 }
 
@@ -678,7 +681,7 @@ a:hover {
 }
 
 .admin-notice {
-    margin: 10px 0 0;
+    margin: 14px 0 8px;
     font-size: 13px;
     color: var(--muted);
 }
