@@ -456,6 +456,8 @@ function renderItemComments(meeting, item, state, locked, memberName) {
         });
     }
 
+    wrap.appendChild(list);
+
     if (!locked) {
         const textarea = document.createElement("textarea");
         textarea.id = `comment-${meeting.id}-${item.id}`;
@@ -483,7 +485,6 @@ function renderItemComments(meeting, item, state, locked, memberName) {
         wrap.appendChild(button);
     }
 
-    wrap.appendChild(list);
     return wrap;
 }
 
