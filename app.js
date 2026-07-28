@@ -11,10 +11,6 @@ const I18N = {
             "A quiet place for Belia PBB to meet asynchronously — raise topics, leave notes, and vote when a decision is needed.",
         intro2:
             "No live call required. Read the agenda, add your view, cast your vote, and come back when you can.",
-        howItWorks: "How it works",
-        step1: "Open a meeting and read the agenda",
-        step2: "Leave a comment on each question if you have something to add",
-        step3: "Vote Yes, No, or Abstain on items that need a decision",
         activeMeetings: "Active meetings",
         closedMeetings: "Closed",
         noActive: "No active meetings.",
@@ -66,10 +62,6 @@ const I18N = {
             "Ruang tenang untuk Belia PBB bermesyuarat secara tidak segerak — kemukakan topik, tinggalkan nota, dan undi bila keputusan diperlukan.",
         intro2:
             "Tiada panggilan langsung diperlukan. Baca agenda, kongsikan pandangan, undi, dan kembali bila anda boleh.",
-        howItWorks: "Cara ia berfungsi",
-        step1: "Buka mesyuarat dan baca agenda",
-        step2: "Tinggalkan komen pada setiap soalan jika ada sesuatu untuk dikongsi",
-        step3: "Undi Ya, Tidak, atau Abstain bagi perkara yang perlu keputusan",
         activeMeetings: "Mesyuarat aktif",
         closedMeetings: "Ditutup",
         noActive: "Tiada mesyuarat aktif.",
