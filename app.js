@@ -9,7 +9,7 @@ const I18N = {
     en: {
         title: "Belia PBB Meeting Space",
         pageTitle: "Belia PBB Meeting Space",
-        updated: (date) => `Today's date · ${date}`,
+        updated: (date) => `Today's date • ${date}`,
         intro1: "One place for every discussion.",
         intro2:
             "A shared space for Belia PBB to discuss matters asynchronously. Raise agenda items, share updates, gather feedback, and reach decisions without scheduling a meeting.",
@@ -96,7 +96,7 @@ const I18N = {
     bm: {
         title: "Ruang Mesyuarat Belia PBB",
         pageTitle: "Ruang Mesyuarat Belia PBB",
-        updated: (date) => `Tarikh hari ini · ${date}`,
+        updated: (date) => `Tarikh hari ini • ${date}`,
         intro1: "Satu tempat untuk setiap perbincangan.",
         intro2:
             "Ruang bersama untuk Belia PBB membincangkan perkara secara tidak segerak. Kemukakan agenda, kongsi kemas kini, kumpulkan maklum balas, dan buat keputusan tanpa perlu menjadualkan mesyuarat.",
