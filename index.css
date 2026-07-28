@@ -479,6 +479,66 @@ a:hover {
     margin-bottom: 0;
 }
 
+.summary-box {
+    display: grid;
+    gap: 12px;
+}
+
+.summary-box-input {
+    width: 100%;
+    min-height: 160px;
+    padding: 12px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface);
+    font: inherit;
+    line-height: 1.65;
+    color: var(--text);
+    resize: vertical;
+}
+
+.summary-box-input:focus {
+    outline: none;
+    border-color: var(--text);
+}
+
+.summary-box-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.summary-box-actions button {
+    padding: 6px 12px;
+    border: 1px solid var(--btn-bg);
+    background: var(--btn-bg);
+    font: inherit;
+    font-size: 13px;
+    color: var(--btn-text);
+    cursor: pointer;
+}
+
+.summary-box-actions button:hover {
+    background: var(--btn-hover);
+    border-color: var(--btn-hover);
+}
+
+.summary-box-actions .admin-notice {
+    margin: 0;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .empty {
     margin: 0;
     padding: 16px 0;
