@@ -68,7 +68,8 @@ const I18N = {
         adminAddMeeting: "Add meeting",
         adminNoMeetings: "No meetings yet.",
         adminTitleLabel: "Title",
-        adminDateLabel: "Date",
+        adminStartDateLabel: "Start date",
+        adminEndDateLabel: "Finish date",
         adminStatusLabel: "Status",
         adminStatusActive: "Active",
         adminStatusClosed: "Closed",
@@ -154,7 +155,8 @@ const I18N = {
         adminAddMeeting: "Tambah mesyuarat",
         adminNoMeetings: "Belum ada mesyuarat.",
         adminTitleLabel: "Tajuk",
-        adminDateLabel: "Tarikh",
+        adminStartDateLabel: "Tarikh mula",
+        adminEndDateLabel: "Tarikh tamat",
         adminStatusLabel: "Status",
         adminStatusActive: "Aktif",
         adminStatusClosed: "Ditutup",
@@ -183,7 +185,8 @@ const DEFAULT_MEETINGS = [
     {
         id: "kickoff-2026",
         status: "active",
-        date: { en: "Jul 28, 2026", bm: "28 Jul 2026" },
+        startDate: { en: "Jul 28, 2026", bm: "28 Jul 2026" },
+        endDate: { en: "Aug 4, 2026", bm: "4 Ogos 2026" },
         title: {
             en: "Belia PBB kickoff",
             bm: "Kickoff Belia PBB",
@@ -214,7 +217,8 @@ const DEFAULT_MEETINGS = [
     {
         id: "programme-ideas",
         status: "active",
-        date: { en: "Jul 28, 2026", bm: "28 Jul 2026" },
+        startDate: { en: "Jul 28, 2026", bm: "28 Jul 2026" },
+        endDate: { en: "Aug 4, 2026", bm: "4 Ogos 2026" },
         title: {
             en: "Programme ideas for Q3",
             bm: "Idea program untuk Suku 3",
@@ -252,7 +256,8 @@ const DEFAULT_MEETINGS = [
     {
         id: "naming-space",
         status: "closed",
-        date: { en: "Jul 20, 2026", bm: "20 Jul 2026" },
+        startDate: { en: "Jul 14, 2026", bm: "14 Jul 2026" },
+        endDate: { en: "Jul 20, 2026", bm: "20 Jul 2026" },
         title: {
             en: "Naming this meeting space",
             bm: "Penamaan ruang mesyuarat ini",
@@ -327,9 +332,34 @@ function bilingual(value) {
     return { en: text, bm: text };
 }
 
+function defaultDateLabel() {
+    return new Date().toLocaleDateString("en-GB", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+    });
+}
+
+function meetingStartDate(meeting) {
+    return meeting?.startDate || meeting?.date || null;
+}
+
+function meetingEndDate(meeting) {
+    return meeting?.endDate || meeting?.startDate || meeting?.date || null;
+}
+
+function formatMeetingDates(meeting) {
+    const start = localized(meetingStartDate(meeting));
+    const end = localized(meetingEndDate(meeting));
+    if (!start) return end || "";
+    if (!end || end === start) return start;
+    return `${start} – ${end}`;
+}
+
 function createMeetingFromForm({
     title,
-    date,
+    startDate,
+    endDate,
     status,
     summary,
     chair,
@@ -343,10 +373,14 @@ function createMeetingFromForm({
         .map((question) => String(question || "").trim())
         .filter(Boolean);
 
+    const start = bilingual(startDate);
+    const end = bilingual(endDate || startDate);
+
     const meeting = {
         id,
         status: status === "closed" ? "closed" : "active",
-        date: bilingual(date),
+        startDate: start,
+        endDate: end,
         title: bilingual(title),
         summary: bilingual(summary),
         chair: String(chair || "").trim(),
@@ -375,10 +409,13 @@ function updateMeetingFromForm(id, payload) {
         .filter(Boolean);
 
     const current = meetings[index];
+    const start = bilingual(payload.startDate);
+    const end = bilingual(payload.endDate || payload.startDate);
     const updated = {
         ...current,
         status: payload.status === "closed" ? "closed" : "active",
-        date: bilingual(payload.date),
+        startDate: start,
+        endDate: end,
         title: bilingual(payload.title),
         summary: bilingual(payload.summary),
         chair: String(payload.chair || "").trim(),
@@ -388,6 +425,7 @@ function updateMeetingFromForm(id, payload) {
             question: bilingual(question),
         })),
     };
+    delete updated.date;
 
     const minutesText = String(payload.minutes || "").trim();
     if (minutesText) updated.minutes = bilingual(minutesText);
@@ -658,7 +696,7 @@ function renderMeetingList(meetings) {
             <span class="list-title">
                 <a href="${meetingUrl(meeting.id)}">${escapeHtml(localized(meeting.title))}</a>
             </span>
-            <span class="meeting-meta">${escapeHtml(localized(meeting.date))}</span>
+            <span class="meeting-meta">${escapeHtml(formatMeetingDates(meeting))}</span>
         `;
         list.appendChild(li);
     });
@@ -814,8 +852,8 @@ function renderMeetingPage() {
     const state = ensureJoined(meeting.id, memberName);
     titleEl.textContent = title;
     dateEl.textContent = locked
-        ? `${localized(meeting.date)} · ${t("closedLabel")}`
-        : localized(meeting.date);
+        ? `${formatMeetingDates(meeting)} · ${t("closedLabel")}`
+        : formatMeetingDates(meeting);
     if (rolesEl) rolesEl.hidden = false;
     renderMeetingRoles(meeting, state, locked);
     renderAttendeesList(meeting, state);
@@ -898,7 +936,7 @@ function renderDiscussionPage() {
     const locked = true;
     const state = ensureJoined(meeting.id, memberName);
     titleEl.textContent = title;
-    dateEl.textContent = `${localized(meeting.date)} · ${t("closedLabel")}`;
+    dateEl.textContent = `${formatMeetingDates(meeting)} · ${t("closedLabel")}`;
     summaryEl.textContent = localized(meeting.summary);
 
     const voterId = getVoterId();
@@ -1093,7 +1131,8 @@ function setupAdminForm() {
     if (!form || form.dataset.bound === "true") return;
     form.dataset.bound = "true";
 
-    const dateInput = document.getElementById("admin-date");
+    const startDateInput = document.getElementById("admin-start-date");
+    const endDateInput = document.getElementById("admin-end-date");
     const questionsRoot = document.getElementById("admin-questions");
     const cancelBtn = document.getElementById("admin-cancel-edit");
 
@@ -1148,14 +1187,14 @@ function setupAdminForm() {
 
     function fillForm(meeting) {
         form.dataset.editingId = meeting?.id || "";
+        const today = defaultDateLabel();
         document.getElementById("admin-title").value = meeting ? localized(meeting.title) : "";
-        document.getElementById("admin-date").value = meeting
-            ? localized(meeting.date)
-            : new Date().toLocaleDateString("en-GB", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-              });
+        document.getElementById("admin-start-date").value = meeting
+            ? localized(meetingStartDate(meeting)) || today
+            : today;
+        document.getElementById("admin-end-date").value = meeting
+            ? localized(meetingEndDate(meeting)) || today
+            : today;
         document.getElementById("admin-status").value = meeting?.status || "active";
         document.getElementById("admin-summary").value = meeting ? localized(meeting.summary) : "";
         document.getElementById("admin-chair").value = meeting?.chair || "";
@@ -1175,12 +1214,11 @@ function setupAdminForm() {
         if (heading) heading.textContent = meeting ? t("adminUpdate") : t("adminAddMeeting");
     }
 
-    if (dateInput && !dateInput.value) {
-        dateInput.value = new Date().toLocaleDateString("en-GB", {
-            day: "numeric",
-            month: "short",
-            year: "numeric",
-        });
+    if (startDateInput && !startDateInput.value) {
+        startDateInput.value = defaultDateLabel();
+    }
+    if (endDateInput && !endDateInput.value) {
+        endDateInput.value = defaultDateLabel();
     }
 
     if (questionsRoot && !questionsRoot.children.length) {
@@ -1245,7 +1283,8 @@ function setupAdminForm() {
     form.addEventListener("submit", (event) => {
         event.preventDefault();
         const title = document.getElementById("admin-title")?.value || "";
-        const date = document.getElementById("admin-date")?.value || "";
+        const startDate = document.getElementById("admin-start-date")?.value || "";
+        const endDate = document.getElementById("admin-end-date")?.value || "";
         const status = document.getElementById("admin-status")?.value || "active";
         const summary = document.getElementById("admin-summary")?.value || "";
         const chair = document.getElementById("admin-chair")?.value || "";
@@ -1255,11 +1294,12 @@ function setupAdminForm() {
             (input) => input.value
         );
 
-        if (!title.trim()) return;
+        if (!title.trim() || !startDate.trim() || !endDate.trim()) return;
 
         const payload = {
             title,
-            date,
+            startDate,
+            endDate,
             status,
             summary,
             chair,

@@ -30,8 +30,16 @@
             <label for="admin-title" data-i18n="adminTitleLabel">Title</label>
             <input id="admin-title" name="title" type="text" required maxlength="120">
 
-            <label for="admin-date" data-i18n="adminDateLabel">Date</label>
-            <input id="admin-date" name="date" type="text" required maxlength="40">
+            <div class="admin-date-row">
+                <div class="admin-date-field">
+                    <label for="admin-start-date" data-i18n="adminStartDateLabel">Start date</label>
+                    <input id="admin-start-date" name="startDate" type="text" required maxlength="40">
+                </div>
+                <div class="admin-date-field">
+                    <label for="admin-end-date" data-i18n="adminEndDateLabel">Finish date</label>
+                    <input id="admin-end-date" name="endDate" type="text" required maxlength="40">
+                </div>
+            </div>
 
             <label for="admin-status" data-i18n="adminStatusLabel">Status</label>
             <select id="admin-status" name="status">

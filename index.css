@@ -498,7 +498,23 @@ a:hover {
     color: var(--muted);
 }
 
-.admin-form label:first-child {
+.admin-form > label:first-child {
+    margin-top: 0;
+}
+
+.admin-date-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.admin-date-field {
+    display: grid;
+    gap: 8px;
+}
+
+.admin-date-field label {
     margin-top: 0;
 }
 
@@ -772,6 +788,10 @@ footer {
 
     .list .meeting-meta {
         margin-left: 0;
+    }
+
+    .admin-date-row {
+        grid-template-columns: 1fr;
     }
 
     .meeting-roles {
