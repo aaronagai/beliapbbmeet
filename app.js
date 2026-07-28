@@ -26,6 +26,11 @@ const I18N = {
         no: "No",
         abstain: "Abstain",
         votes: (c) => `Yes ${c.yes} · No ${c.no} · Abstain ${c.abstain}`,
+        back: "← All meetings",
+        agenda: "Agenda",
+        closedLabel: "Closed",
+        notFound: "Meeting not found.",
+        meetingPageTitle: (name) => `${name} · Belia PBB`,
     },
     bm: {
         title: "Ruang Mesyuarat Belia PBB",
@@ -51,6 +56,11 @@ const I18N = {
         no: "Tidak",
         abstain: "Abstain",
         votes: (c) => `Ya ${c.yes} · Tidak ${c.no} · Abstain ${c.abstain}`,
+        back: "← Semua mesyuarat",
+        agenda: "Agenda",
+        closedLabel: "Ditutup",
+        notFound: "Mesyuarat tidak dijumpai.",
+        meetingPageTitle: (name) => `${name} · Belia PBB`,
     },
 };
 
@@ -228,10 +238,26 @@ function getVoterId() {
     return id;
 }
 
-function applyStaticCopy() {
+function meetingUrl(id) {
+    return `meeting.html?id=${encodeURIComponent(id)}`;
+}
+
+function getMeetingIdFromQuery() {
+    return new URLSearchParams(window.location.search).get("id");
+}
+
+function findMeeting(id) {
+    return MEETINGS.find((meeting) => meeting.id === id) || null;
+}
+
+function isMeetingPage() {
+    return Boolean(document.getElementById("meeting-title"));
+}
+
+function applyStaticCopy(pageTitle) {
     const lang = getLang();
     document.documentElement.lang = lang === "bm" ? "ms" : "en";
-    document.title = t("pageTitle");
+    document.title = pageTitle || t("pageTitle");
 
     document.querySelectorAll("[data-i18n]").forEach((el) => {
         const key = el.getAttribute("data-i18n");
@@ -245,14 +271,10 @@ function applyStaticCopy() {
     });
 }
 
-function renderMeetings() {
-    const state = loadState();
-    const voterId = getVoterId();
+function renderHomeMeetings() {
     const activeRoot = document.getElementById("meetings");
     const closedRoot = document.getElementById("closed-meetings");
-    const openIds = new Set(
-        [...document.querySelectorAll(".meeting.open")].map((el) => el.dataset.id)
-    );
+    if (!activeRoot || !closedRoot) return;
 
     activeRoot.innerHTML = "";
     closedRoot.innerHTML = "";
@@ -263,60 +285,85 @@ function renderMeetings() {
     if (!active.length) {
         activeRoot.innerHTML = `<p class="empty">${escapeHtml(t("noActive"))}</p>`;
     } else {
-        active.forEach((meeting) => {
-            activeRoot.appendChild(renderMeeting(meeting, state, voterId, false, openIds));
-        });
+        activeRoot.appendChild(renderMeetingList(active));
     }
 
     if (!closed.length) {
         closedRoot.innerHTML = `<p class="empty">${escapeHtml(t("noClosed"))}</p>`;
     } else {
-        closed.forEach((meeting) => {
-            closedRoot.appendChild(renderMeeting(meeting, state, voterId, true, openIds));
-        });
+        closedRoot.appendChild(renderMeetingList(closed));
     }
 }
 
-function renderMeeting(meeting, state, voterId, locked, openIds) {
-    const el = document.createElement("article");
-    el.className = "meeting";
-    el.dataset.id = meeting.id;
-    if (openIds.has(meeting.id)) el.classList.add("open");
+function renderMeetingList(meetings) {
+    const list = document.createElement("ul");
+    list.className = "list";
 
-    const header = document.createElement("button");
-    header.type = "button";
-    header.className = "meeting-header";
-    header.innerHTML = `
-        <span class="meeting-title">${escapeHtml(localized(meeting.title))}</span>
-        <span class="meeting-meta">${escapeHtml(localized(meeting.date))}</span>
-    `;
-    header.addEventListener("click", () => {
-        el.classList.toggle("open");
+    meetings.forEach((meeting) => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+            <span class="list-title">
+                <a href="${meetingUrl(meeting.id)}">${escapeHtml(localized(meeting.title))}</a>
+            </span>
+            <span class="meeting-meta">${escapeHtml(localized(meeting.date))}</span>
+        `;
+        list.appendChild(li);
     });
 
-    const body = document.createElement("div");
-    body.className = "meeting-body";
+    return list;
+}
 
-    const summary = document.createElement("p");
-    summary.textContent = localized(meeting.summary);
-    body.appendChild(summary);
+function renderMeetingPage() {
+    const meeting = findMeeting(getMeetingIdFromQuery());
+    const titleEl = document.getElementById("meeting-title");
+    const dateEl = document.getElementById("meeting-date");
+    const summaryEl = document.getElementById("meeting-summary");
+    const agendaRoot = document.getElementById("agenda");
+    const notesRoot = document.getElementById("notes");
 
+    if (!meeting) {
+        applyStaticCopy(t("pageTitle"));
+        titleEl.textContent = t("notFound");
+        dateEl.textContent = "";
+        summaryEl.textContent = "";
+        agendaRoot.innerHTML = "";
+        notesRoot.innerHTML = "";
+        return;
+    }
+
+    const locked = meeting.status === "closed";
+    const title = localized(meeting.title);
+    applyStaticCopy(t("meetingPageTitle")(title));
+
+    titleEl.textContent = title;
+    dateEl.textContent = locked
+        ? `${localized(meeting.date)} · ${t("closedLabel")}`
+        : localized(meeting.date);
+    summaryEl.textContent = localized(meeting.summary);
+
+    const state = loadState();
+    const voterId = getVoterId();
+
+    agendaRoot.innerHTML = "";
     const agenda = document.createElement("ul");
     agenda.className = "agenda";
-
     meeting.items.forEach((item) => {
         agenda.appendChild(renderAgendaItem(meeting, item, state, voterId, locked));
     });
+    agendaRoot.appendChild(agenda);
 
-    body.appendChild(agenda);
+    notesRoot.innerHTML = "";
+    notesRoot.appendChild(renderNotes(meeting, state, locked));
+}
 
+function renderNotes(meeting, state, locked) {
     const notesWrap = document.createElement("div");
     notesWrap.className = "notes";
-    notesWrap.innerHTML = `<label for="note-${meeting.id}">${escapeHtml(t("notes"))}</label>`;
 
     const noteList = document.createElement("ul");
     noteList.className = "note-list";
     const notes = state.notes[meeting.id] || [];
+
     if (!notes.length) {
         const empty = document.createElement("li");
         empty.className = "note-empty";
@@ -333,6 +380,7 @@ function renderMeeting(meeting, state, voterId, locked, openIds) {
     if (!locked) {
         const textarea = document.createElement("textarea");
         textarea.id = `note-${meeting.id}`;
+        textarea.setAttribute("aria-label", t("notes"));
         textarea.placeholder = t("notePlaceholder");
 
         const button = document.createElement("button");
@@ -356,11 +404,7 @@ function renderMeeting(meeting, state, voterId, locked, openIds) {
     }
 
     notesWrap.appendChild(noteList);
-    body.appendChild(notesWrap);
-
-    el.appendChild(header);
-    el.appendChild(body);
-    return el;
+    return notesWrap;
 }
 
 function renderAgendaItem(meeting, item, state, voterId, locked) {
@@ -418,8 +462,12 @@ function escapeHtml(value) {
 }
 
 function renderAll() {
-    applyStaticCopy();
-    renderMeetings();
+    if (isMeetingPage()) {
+        renderMeetingPage();
+    } else {
+        applyStaticCopy();
+        renderHomeMeetings();
+    }
 }
 
 function setupLangToggle() {
