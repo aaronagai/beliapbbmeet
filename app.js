@@ -293,22 +293,96 @@ function cloneMeetings(meetings) {
     return JSON.parse(JSON.stringify(meetings));
 }
 
-function getMeetings() {
-    try {
-        const raw = localStorage.getItem(MEETINGS_KEY);
-        if (!raw) {
-            localStorage.setItem(MEETINGS_KEY, JSON.stringify(DEFAULT_MEETINGS));
-            return cloneMeetings(DEFAULT_MEETINGS);
-        }
-        const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed : cloneMeetings(DEFAULT_MEETINGS);
-    } catch {
-        return cloneMeetings(DEFAULT_MEETINGS);
-    }
+/* ---------------------------------------------------------------------------
+ * Data layer
+ *
+ * Every read and write goes through `backend`. Today that is localStorage, so
+ * each browser has its own private copy of everything. Swapping this one object
+ * for a shared backend is what makes the data shared across devices.
+ *
+ * Reads are served synchronously from `cache` so the render code stays simple;
+ * `loadAll()` fills the cache once at startup. Writes update the cache first,
+ * then persist, so the UI can repaint immediately without waiting.
+ * ------------------------------------------------------------------------- */
+
+function createLocalBackend() {
+    return {
+        async fetchMeetings() {
+            try {
+                const raw = localStorage.getItem(MEETINGS_KEY);
+                if (!raw) {
+                    localStorage.setItem(MEETINGS_KEY, JSON.stringify(DEFAULT_MEETINGS));
+                    return cloneMeetings(DEFAULT_MEETINGS);
+                }
+                const parsed = JSON.parse(raw);
+                return Array.isArray(parsed) ? parsed : cloneMeetings(DEFAULT_MEETINGS);
+            } catch {
+                return cloneMeetings(DEFAULT_MEETINGS);
+            }
+        },
+
+        async persistMeetings(meetings) {
+            localStorage.setItem(MEETINGS_KEY, JSON.stringify(meetings));
+        },
+
+        async fetchState() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return defaultState();
+                const parsed = JSON.parse(raw);
+                return {
+                    votes: parsed.votes || {},
+                    notes: parsed.notes || {},
+                    comments: parsed.comments || {},
+                    roles: parsed.roles || {},
+                    attendees: parsed.attendees || {},
+                };
+            } catch {
+                return defaultState();
+            }
+        },
+
+        async persistState(state) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        },
+    };
 }
 
-function saveMeetings(meetings) {
-    localStorage.setItem(MEETINGS_KEY, JSON.stringify(meetings));
+const backend = createLocalBackend();
+
+const cache = {
+    meetings: null,
+    state: null,
+};
+
+function clone(value) {
+    return JSON.parse(JSON.stringify(value));
+}
+
+async function loadAll() {
+    const [meetings, state] = await Promise.all([
+        backend.fetchMeetings(),
+        backend.fetchState(),
+    ]);
+    cache.meetings = meetings;
+    cache.state = state;
+}
+
+// Writes that happen mid-render have nothing to await them. Surface the failure
+// rather than letting the rejection disappear.
+function persistInBackground(promise) {
+    Promise.resolve(promise).catch((error) => {
+        console.error("[belia] could not save changes", error);
+    });
+}
+
+function getMeetings() {
+    return cache.meetings ? clone(cache.meetings) : cloneMeetings(DEFAULT_MEETINGS);
+}
+
+async function saveMeetings(meetings) {
+    cache.meetings = clone(meetings);
+    await backend.persistMeetings(meetings);
 }
 
 function slugify(value) {
@@ -361,7 +435,7 @@ function formatMeetingDates(meeting) {
     return `${start} – ${end}`;
 }
 
-function createMeetingFromForm({
+async function createMeetingFromForm({
     title,
     startDate,
     endDate,
@@ -395,11 +469,11 @@ function createMeetingFromForm({
     };
 
     meetings.unshift(meeting);
-    saveMeetings(meetings);
+    await saveMeetings(meetings);
     return meeting;
 }
 
-function updateMeetingFromForm(id, payload) {
+async function updateMeetingFromForm(id, payload) {
     const meetings = getMeetings();
     const index = meetings.findIndex((meeting) => meeting.id === id);
     if (index < 0) return null;
@@ -437,13 +511,13 @@ function updateMeetingFromForm(id, payload) {
     }
 
     meetings[index] = updated;
-    saveMeetings(meetings);
+    await saveMeetings(meetings);
     return updated;
 }
 
-function deleteMeeting(id) {
+async function deleteMeeting(id) {
     const next = getMeetings().filter((meeting) => meeting.id !== id);
-    saveMeetings(next);
+    await saveMeetings(next);
 }
 
 function getLang() {
@@ -548,24 +622,12 @@ function defaultState() {
 }
 
 function loadState() {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return defaultState();
-        const parsed = JSON.parse(raw);
-        return {
-            votes: parsed.votes || {},
-            notes: parsed.notes || {},
-            comments: parsed.comments || {},
-            roles: parsed.roles || {},
-            attendees: parsed.attendees || {},
-        };
-    } catch {
-        return defaultState();
-    }
+    return cache.state ? clone(cache.state) : defaultState();
 }
 
-function saveState(state) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+async function saveState(state) {
+    cache.state = clone(state);
+    await backend.persistState(state);
 }
 
 function voteKey(meetingId, itemId) {
@@ -761,7 +823,7 @@ function ensureJoined(meetingId, memberName) {
     if (alreadyIn) return state;
 
     state.attendees[meetingId] = [...existing, name];
-    saveState(state);
+    persistInBackground(saveState(state));
     return state;
 }
 
@@ -836,7 +898,7 @@ function renderRoleValue(field, value, meeting, locked) {
         const next = loadState();
         if (!next.roles[meeting.id]) next.roles[meeting.id] = {};
         next.roles[meeting.id][field] = input.value.trim();
-        saveState(next);
+        persistInBackground(saveState(next));
         renderAll();
     });
     return input;
@@ -1037,7 +1099,7 @@ function renderItemComments(meeting, item, state, locked, memberName) {
                 name: memberName,
                 when: new Date().toLocaleString(),
             });
-            saveState(next);
+            persistInBackground(saveState(next));
             renderAll();
         });
 
@@ -1082,7 +1144,7 @@ function renderAgendaItem(meeting, item, state, voterId, locked, memberName) {
                 } else {
                     next.votes[myKey] = { choice, name: memberName };
                 }
-                saveState(next);
+                persistInBackground(saveState(next));
                 renderAll();
             });
         }
@@ -1190,12 +1252,12 @@ function setupAdminListPage() {
     if (!list || list.dataset.bound === "true") return;
     list.dataset.bound = "true";
 
-    list.addEventListener("click", (event) => {
+    list.addEventListener("click", async (event) => {
         const deleteBtn = event.target.closest("[data-delete-meeting]");
         if (!deleteBtn) return;
         const id = deleteBtn.getAttribute("data-delete-meeting");
         if (!id) return;
-        deleteMeeting(id);
+        await deleteMeeting(id);
         renderAdminListPage();
     });
 }
@@ -1351,8 +1413,11 @@ function setupAdminMeetingForm() {
         if (input) input.focus();
     });
 
-    form.addEventListener("submit", (event) => {
+    let saving = false;
+
+    form.addEventListener("submit", async (event) => {
         event.preventDefault();
+        if (saving) return;
         const title = document.getElementById("admin-title")?.value || "";
         const startDate = document.getElementById("admin-start-date")?.value || "";
         const endDate = document.getElementById("admin-end-date")?.value || "";
@@ -1380,8 +1445,17 @@ function setupAdminMeetingForm() {
         };
 
         const id = form.dataset.editingId || "";
-        if (id) updateMeetingFromForm(id, payload);
-        else createMeetingFromForm(payload);
+
+        // The save has to land before we navigate away, or the change is lost.
+        saving = true;
+        try {
+            if (id) await updateMeetingFromForm(id, payload);
+            else await createMeetingFromForm(payload);
+        } catch (error) {
+            console.error("[belia] could not save meeting", error);
+            saving = false;
+            return;
+        }
 
         sessionStorage.setItem(ADMIN_NOTICE_KEY, id ? "updated" : "saved");
         window.location.href = "admin.html";
@@ -1484,11 +1558,21 @@ function setupAttendeesDialog() {
     });
 }
 
-setupLangToggle();
-setupThemeToggle();
-setupNameGate();
-setupAttendeesDialog();
-setupAdminListPage();
-setupAdminMeetingForm();
-applyTheme();
-renderAll();
+async function init() {
+    applyTheme();
+    setupLangToggle();
+    setupThemeToggle();
+    setupNameGate();
+    setupAttendeesDialog();
+
+    // Everything below this line reads meeting data, so warm the cache first.
+    await loadAll();
+
+    setupAdminListPage();
+    setupAdminMeetingForm();
+    renderAll();
+}
+
+init().catch((error) => {
+    console.error("[belia] could not start", error);
+});
