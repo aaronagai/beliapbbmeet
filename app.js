@@ -57,6 +57,9 @@ const I18N = {
         themeSystem: "System",
         themeSwitchLabel: (mode) => `Theme: ${mode}. Click to change.`,
         minutesHeading: "Summary",
+        minutesPlaceholder: "Write the meeting summary…",
+        saveMinutes: "Save summary",
+        minutesSaved: "Summary saved.",
         openDiscussion: "Open discussion",
         discussionHeading: "Discussion",
         backToMeeting: "← Back to meeting",
@@ -144,6 +147,9 @@ const I18N = {
         themeSystem: "Sistem",
         themeSwitchLabel: (mode) => `Tema: ${mode}. Klik untuk tukar.`,
         minutesHeading: "Ringkasan",
+        minutesPlaceholder: "Tulis ringkasan mesyuarat…",
+        saveMinutes: "Simpan ringkasan",
+        minutesSaved: "Ringkasan disimpan.",
         openDiscussion: "Buka perbincangan",
         discussionHeading: "Perbincangan",
         backToMeeting: "← Kembali ke mesyuarat",
@@ -432,6 +438,19 @@ function deleteMeeting(id) {
     saveMeetings(next);
 }
 
+function updateMeetingMinutes(id, text) {
+    const meetings = getMeetings();
+    const index = meetings.findIndex((meeting) => meeting.id === id);
+    if (index < 0) return null;
+
+    const minutesText = String(text || "").trim();
+    if (minutesText) meetings[index].minutes = bilingual(minutesText);
+    else delete meetings[index].minutes;
+
+    saveMeetings(meetings);
+    return meetings[index];
+}
+
 function getLang() {
     const saved = localStorage.getItem(LANG_KEY);
     return saved === "bm" ? "bm" : "en";
@@ -673,6 +692,12 @@ function applyStaticCopy(pageTitle) {
         if (typeof value === "string") el.setAttribute("aria-label", value);
     });
 
+    document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+        const key = el.getAttribute("data-i18n-placeholder");
+        const value = t(key);
+        if (typeof value === "string") el.setAttribute("placeholder", value);
+    });
+
     document.querySelectorAll(".lang-btn").forEach((btn) => {
         btn.classList.toggle("active", btn.dataset.lang === lang);
         btn.setAttribute("aria-pressed", btn.dataset.lang === lang ? "true" : "false");
@@ -834,7 +859,9 @@ function renderMeetingPage() {
     const rolesEl = document.getElementById("meeting-roles");
     const activeBody = document.getElementById("active-body");
     const closedBody = document.getElementById("closed-body");
-    const minutesBody = document.getElementById("minutes-body");
+    const minutesInput = document.getElementById("minutes-input");
+    const saveMinutesBtn = document.getElementById("save-minutes");
+    const minutesNotice = document.getElementById("minutes-notice");
     const openDiscussion = document.getElementById("open-discussion");
     const memberName = getMemberName();
 
@@ -846,7 +873,8 @@ function renderMeetingPage() {
         dateEl.textContent = "";
         if (summaryEl) summaryEl.textContent = "";
         if (agendaRoot) agendaRoot.innerHTML = "";
-        if (minutesBody) minutesBody.innerHTML = "";
+        if (minutesInput && document.activeElement !== minutesInput) minutesInput.value = "";
+        if (minutesNotice) minutesNotice.hidden = true;
         memberStatus.textContent = "";
         if (rolesEl) rolesEl.hidden = true;
         if (activeBody) activeBody.hidden = true;
@@ -880,13 +908,10 @@ function renderMeetingPage() {
     if (locked) {
         if (activeBody) activeBody.hidden = true;
         if (closedBody) closedBody.hidden = false;
-        if (minutesBody) {
-            const minutesText = localized(meeting.minutes) || t("noMinutes");
-            minutesBody.innerHTML = minutesText
-                .split(/\n+/)
-                .filter(Boolean)
-                .map((para) => `<p>${escapeHtml(para)}</p>`)
-                .join("");
+        if (saveMinutesBtn) saveMinutesBtn.textContent = t("saveMinutes");
+        if (minutesInput && document.activeElement !== minutesInput) {
+            minutesInput.value = localized(meeting.minutes) || "";
+            minutesInput.placeholder = t("minutesPlaceholder");
         }
         if (openDiscussion) {
             openDiscussion.href = discussionUrl(meeting.id);
@@ -1433,10 +1458,30 @@ function setupAttendeesDialog() {
     });
 }
 
+function setupClosedSummaryBox() {
+    const saveBtn = document.getElementById("save-minutes");
+    const input = document.getElementById("minutes-input");
+    if (!saveBtn || !input || saveBtn.dataset.bound === "true") return;
+    saveBtn.dataset.bound = "true";
+
+    saveBtn.addEventListener("click", () => {
+        const meeting = findMeeting(getMeetingIdFromQuery());
+        if (!meeting || meeting.status !== "closed") return;
+
+        updateMeetingMinutes(meeting.id, input.value);
+        const notice = document.getElementById("minutes-notice");
+        if (notice) {
+            notice.hidden = false;
+            notice.textContent = t("minutesSaved");
+        }
+    });
+}
+
 setupLangToggle();
 setupThemeToggle();
 setupNameGate();
 setupAttendeesDialog();
+setupClosedSummaryBox();
 setupAdminListPage();
 setupAdminMeetingForm();
 applyTheme();
