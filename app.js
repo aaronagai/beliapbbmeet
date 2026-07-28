@@ -9,7 +9,7 @@ const I18N = {
     en: {
         title: "Belia PBB Meeting Space",
         pageTitle: "Belia PBB Meeting Space",
-        updated: "Updated Jul 28, 2026",
+        updated: (date) => `Today's date · ${date}`,
         intro1: "One place for every discussion.",
         intro2:
             "A shared space for Belia PBB to discuss matters asynchronously. Raise agenda items, share updates, gather feedback, and reach decisions without scheduling a meeting.",
@@ -96,7 +96,7 @@ const I18N = {
     bm: {
         title: "Ruang Mesyuarat Belia PBB",
         pageTitle: "Ruang Mesyuarat Belia PBB",
-        updated: "Dikemas kini 28 Jul 2026",
+        updated: (date) => `Tarikh hari ini · ${date}`,
         intro1: "Satu tempat untuk setiap perbincangan.",
         intro2:
             "Ruang bersama untuk Belia PBB membincangkan perkara secara tidak segerak. Kemukakan agenda, kongsi kemas kini, kumpulkan maklum balas, dan buat keputusan tanpa perlu menjadualkan mesyuarat.",
@@ -643,6 +643,15 @@ function isAdminMeetingPage() {
     return Boolean(document.getElementById("admin-form"));
 }
 
+function formatTodayDate() {
+    const lang = getLang();
+    return new Date().toLocaleDateString(lang === "bm" ? "ms-MY" : "en-US", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+    });
+}
+
 function applyStaticCopy(pageTitle) {
     const lang = getLang();
     document.documentElement.lang = lang === "bm" ? "ms" : "en";
@@ -651,7 +660,11 @@ function applyStaticCopy(pageTitle) {
     document.querySelectorAll("[data-i18n]").forEach((el) => {
         const key = el.getAttribute("data-i18n");
         const value = t(key);
-        if (typeof value === "string") el.textContent = value;
+        if (typeof value === "string") {
+            el.textContent = value;
+        } else if (key === "updated" && typeof value === "function") {
+            el.textContent = value(formatTodayDate());
+        }
     });
 
     document.querySelectorAll("[data-i18n-aria]").forEach((el) => {
