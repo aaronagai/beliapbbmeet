@@ -8,7 +8,14 @@
     <meta name="description" content="Belia PBB asynchronous meeting space">
     <meta name="author" content="Belia PBB">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
+    <script>
+        (function () {
+            var pref = localStorage.getItem("belia-pbb-theme") || "system";
+            var dark = pref === "dark" || (pref === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+            document.documentElement.dataset.theme = dark ? "dark" : "light";
+            document.documentElement.dataset.themePref = pref;
+        })();
+    </script>
     <link rel="stylesheet" href="index.css">
 </head>
 
@@ -28,10 +35,19 @@
     </main>
 
     <footer>
-        <div class="lang-toggle" role="group" aria-label="Language">
-            <button type="button" class="lang-btn" data-lang="en">English</button>
-            <span class="lang-sep" aria-hidden="true">·</span>
-            <button type="button" class="lang-btn" data-lang="bm">BM</button>
+        <div class="footer-row">
+            <div class="lang-toggle" role="group" aria-label="Language">
+                <button type="button" class="lang-btn" data-lang="en">English</button>
+                <span class="lang-sep" aria-hidden="true">·</span>
+                <button type="button" class="lang-btn" data-lang="bm">BM</button>
+            </div>
+            <div class="theme-toggle" role="group" aria-label="Theme">
+                <button type="button" class="theme-btn" data-theme-opt="light" data-i18n="themeLight">Light</button>
+                <span class="theme-sep" aria-hidden="true">·</span>
+                <button type="button" class="theme-btn" data-theme-opt="dark" data-i18n="themeDark">Dark</button>
+                <span class="theme-sep" aria-hidden="true">·</span>
+                <button type="button" class="theme-btn" data-theme-opt="system" data-i18n="themeSystem">System</button>
+            </div>
         </div>
     </footer>
 
