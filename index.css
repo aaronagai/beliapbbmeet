@@ -93,6 +93,70 @@ a:hover {
     color: #111;
 }
 
+.member-bar {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin: 0 0 18px;
+    font-size: 13px;
+    color: #999;
+}
+
+.text-btn {
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: 13px;
+    color: #999;
+    cursor: pointer;
+}
+
+.text-btn:hover {
+    color: #111;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.name-form {
+    display: grid;
+    gap: 8px;
+    max-width: 320px;
+}
+
+.name-form label {
+    font-size: 13px;
+    color: #999;
+}
+
+.name-form input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    font: inherit;
+    color: #111;
+}
+
+.name-form input:focus {
+    outline: none;
+    border-color: #111;
+}
+
+.name-form button {
+    justify-self: start;
+    padding: 6px 12px;
+    border: 1px solid #111;
+    background: #111;
+    font: inherit;
+    font-size: 13px;
+    color: #fff;
+    cursor: pointer;
+}
+
+.name-form button:hover {
+    background: #333;
+}
+
 .meeting-meta {
     font-size: 13px;
     color: #999;
@@ -152,6 +216,12 @@ a:hover {
 }
 
 .vote-counts {
+    font-size: 13px;
+    color: #999;
+    margin: 0 0 6px;
+}
+
+.vote-roster {
     font-size: 13px;
     color: #999;
     margin: 0 0 12px;
