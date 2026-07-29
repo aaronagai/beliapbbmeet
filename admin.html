@@ -25,6 +25,20 @@
         <h1 data-i18n="adminTitle">Admin</h1>
         <p class="updated" data-i18n="adminIntro">Add and manage meetings for Belia PBB.</p>
 
+        <section id="admin-lock" class="name-gate" hidden>
+            <h2 data-i18n="adminLockTitle">Admin passphrase</h2>
+            <p class="updated" data-i18n="adminLockHint">Enter the admin passphrase to add or change
+                meetings. Members do not need this.</p>
+            <form id="admin-lock-form" class="name-form" novalidate>
+                <label for="admin-pass" data-i18n="adminLockLabel">Passphrase</label>
+                <input id="admin-pass" name="passphrase" type="password" autocomplete="current-password"
+                    required>
+                <button type="submit" data-i18n="adminUnlock">Unlock</button>
+            </form>
+        </section>
+
+        <p class="admin-error" data-error hidden></p>
+
         <div class="admin-section-head">
             <h2 data-i18n="adminMeetings">Meetings</h2>
             <a href="admin-meeting.html" id="admin-show-add" class="admin-add-btn" data-i18n-aria="adminAddMeeting" aria-label="Add meeting">+</a>

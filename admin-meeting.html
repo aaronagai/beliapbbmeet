@@ -25,6 +25,20 @@
         <h1 id="admin-form-heading" data-i18n="adminAddMeeting">Add meeting</h1>
         <p class="updated" id="admin-form-intro" data-i18n="adminFormIntro">Fill in the meeting details, then save.</p>
 
+        <section id="admin-lock" class="name-gate" hidden>
+            <h2 data-i18n="adminLockTitle">Admin passphrase</h2>
+            <p class="updated" data-i18n="adminLockHint">Enter the admin passphrase to add or change
+                meetings. Members do not need this.</p>
+            <form id="admin-lock-form" class="name-form" novalidate>
+                <label for="admin-pass" data-i18n="adminLockLabel">Passphrase</label>
+                <input id="admin-pass" name="passphrase" type="password" autocomplete="current-password"
+                    required>
+                <button type="submit" data-i18n="adminUnlock">Unlock</button>
+            </form>
+        </section>
+
+        <p class="admin-error" data-error hidden></p>
+
         <form id="admin-form" class="admin-form" novalidate>
             <label for="admin-title" data-i18n="adminTitleLabel">Title</label>
             <input id="admin-title" name="title" type="text" required maxlength="120">
