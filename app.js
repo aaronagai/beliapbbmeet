@@ -108,6 +108,11 @@ const I18N = {
         adminLocked: "Locked. Enter the passphrase to make changes.",
         adminWrongPass: "Wrong admin passphrase.",
         loadFailed: "Could not reach the meeting space. Check your connection and refresh.",
+        questionProgress: (n, total) => `Question ${n} of ${total}`,
+        previousQuestion: "← Previous",
+        nextQuestion: "Next →",
+        submitAnswers: "Submit",
+        noQuestions: "No questions on this agenda yet.",
     },
     bm: {
         title: "Ruang Mesyuarat Belia PBB",
@@ -208,6 +213,11 @@ const I18N = {
         adminLocked: "Berkunci. Masukkan kata laluan untuk membuat perubahan.",
         adminWrongPass: "Kata laluan admin salah.",
         loadFailed: "Tidak dapat menghubungi ruang mesyuarat. Semak sambungan anda dan muat semula.",
+        questionProgress: (n, total) => `Soalan ${n} daripada ${total}`,
+        previousQuestion: "← Sebelumnya",
+        nextQuestion: "Seterusnya →",
+        submitAnswers: "Hantar",
+        noQuestions: "Belum ada soalan dalam agenda ini.",
     },
 };
 
@@ -699,8 +709,29 @@ function clearAdminPassphrase() {
     sessionStorage.removeItem(ADMIN_PASS_KEY);
 }
 
-function meetingUrl(id) {
-    return `meeting.html?id=${encodeURIComponent(id)}`;
+// Questions are numbered from 1 in the URL so the address bar reads the way the
+// page does. Question 1 is the bare URL, which keeps shared links tidy.
+function meetingUrl(id, question) {
+    const base = `meeting.html?id=${encodeURIComponent(id)}`;
+    return question > 1 ? `${base}&q=${question}` : base;
+}
+
+// Clamped rather than trusted: the agenda can shrink under a link someone
+// bookmarked, and a stale `q` should land on the last question, not a blank page.
+function currentQuestionIndex(total) {
+    if (total < 1) return 0;
+    const raw = new URLSearchParams(window.location.search).get("q");
+    const parsed = Number.parseInt(raw ?? "1", 10);
+    if (!Number.isFinite(parsed)) return 0;
+    return Math.min(Math.max(parsed - 1, 0), total - 1);
+}
+
+// Moving between questions swaps the URL without a reload, so the member is not
+// waiting on the network between questions. Back and forward still work.
+function goToQuestion(meetingId, index) {
+    window.history.pushState({}, "", meetingUrl(meetingId, index + 1));
+    renderAll();
+    window.scrollTo(0, 0);
 }
 
 function discussionUrl(id) {
@@ -984,16 +1015,67 @@ function renderMeetingPage() {
     if (closedBody) closedBody.hidden = true;
     if (summaryEl) summaryEl.textContent = localized(meeting.summary);
 
-    const deviceId = getDeviceId();
+    renderQuestionPage(meeting, state, memberName);
+}
+
+// One question per screen. Members answer on a phone, and a single question with
+// its own comments is a lot easier to work through than a long scrolling list.
+function renderQuestionPage(meeting, state, memberName) {
+    const agendaRoot = document.getElementById("agenda");
+    const progressEl = document.getElementById("question-progress");
+    const navRoot = document.getElementById("question-nav");
+    const items = meeting.items || [];
+
+    if (!items.length) {
+        if (agendaRoot) agendaRoot.innerHTML = `<p class="empty">${escapeHtml(t("noQuestions"))}</p>`;
+        if (progressEl) progressEl.textContent = "";
+        if (navRoot) navRoot.innerHTML = "";
+        return;
+    }
+
+    const index = currentQuestionIndex(items.length);
+
+    if (progressEl) progressEl.textContent = t("questionProgress")(index + 1, items.length);
+
     if (agendaRoot) {
         agendaRoot.innerHTML = "";
         const agenda = document.createElement("ul");
         agenda.className = "agenda";
-        meeting.items.forEach((item) => {
-            agenda.appendChild(renderAgendaItem(meeting, item, state, deviceId, locked, memberName));
-        });
+        agenda.appendChild(
+            renderAgendaItem(meeting, items[index], state, getDeviceId(), false, memberName)
+        );
         agendaRoot.appendChild(agenda);
     }
+
+    renderQuestionNav(meeting, index, items.length);
+}
+
+function renderQuestionNav(meeting, index, total) {
+    const navRoot = document.getElementById("question-nav");
+    if (!navRoot) return;
+    navRoot.innerHTML = "";
+
+    if (index > 0) {
+        const previous = document.createElement("button");
+        previous.type = "button";
+        previous.className = "secondary-btn";
+        previous.textContent = t("previousQuestion");
+        previous.addEventListener("click", () => goToQuestion(meeting.id, index - 1));
+        navRoot.appendChild(previous);
+    }
+
+    const isLast = index === total - 1;
+    const forward = document.createElement("button");
+    forward.type = "button";
+    forward.className = isLast ? "submit-btn" : "secondary-btn";
+    forward.textContent = isLast ? t("submitAnswers") : t("nextQuestion");
+    forward.addEventListener("click", () => {
+        // Votes are already saved as they are cast, so Submit is just the way
+        // out of the last question, not the thing that records anything.
+        if (isLast) window.location.href = "index.html";
+        else goToQuestion(meeting.id, index + 1);
+    });
+    navRoot.appendChild(forward);
 }
 
 function renderDiscussionPage() {
@@ -1640,6 +1722,11 @@ async function init() {
 
     setupAdminListPage();
     setupAdminMeetingForm();
+
+    // Question navigation swaps the URL in place, so back and forward have to
+    // repaint rather than the browser serving a cached page.
+    window.addEventListener("popstate", () => renderAll());
+
     renderAll();
 }
 
