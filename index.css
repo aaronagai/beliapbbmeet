@@ -67,6 +67,22 @@ h1 {
     letter-spacing: -0.01em;
 }
 
+/* Title and the attendees link share a line. Baseline alignment keeps the small
+   link sitting on the title's baseline rather than floating mid-cap-height, and
+   wrapping lets a long meeting name push the link onto its own line on a phone
+   instead of squashing it. */
+.title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 10px;
+    margin: 0 0 10px;
+}
+
+.title-row h1 {
+    margin: 0;
+}
+
 .attendees-link-row {
     margin: 0 0 10px;
 }
