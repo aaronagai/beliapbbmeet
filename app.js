@@ -1178,7 +1178,7 @@ function renderQuestionNav(meeting, index, total) {
         const previous = document.createElement("button");
         previous.type = "button";
         previous.className = "nav-btn nav-btn-prev";
-        previous.innerHTML = `${icon("chevronLeft", 15)}<span>${escapeHtml(t("previousQuestion"))}</span>`;
+        previous.innerHTML = `${icon("arrowLeft", 16)}<span>${escapeHtml(t("previousQuestion"))}</span>`;
         previous.addEventListener("click", () => goToQuestion(meeting.id, index - 1));
         navRoot.appendChild(previous);
     }
@@ -1186,10 +1186,10 @@ function renderQuestionNav(meeting, index, total) {
     const isLast = index === total - 1;
     const forward = document.createElement("button");
     forward.type = "button";
-    forward.className = isLast ? "submit-btn" : "nav-btn nav-btn-next";
+    forward.className = "nav-btn nav-btn-next";
     forward.innerHTML = isLast
-        ? `<span>${escapeHtml(t("submitAnswers"))}</span>${icon("check", 15)}`
-        : `<span>${escapeHtml(t("nextQuestion"))}</span>${icon("chevronRight", 15)}`;
+        ? `<span>${escapeHtml(t("submitAnswers"))}</span>${icon("check", 16)}`
+        : `<span>${escapeHtml(t("nextQuestion"))}</span>${icon("arrowRight", 16)}`;
     forward.addEventListener("click", () => {
         // Votes are already saved as they are cast, so Submit is just the way
         // out of the last question, not the thing that records anything.
@@ -1308,7 +1308,7 @@ function renderItemComments(meeting, item, state, locked, memberName) {
         button.disabled = true;
         button.setAttribute("aria-label", t("addComment"));
         button.title = t("addComment");
-        button.innerHTML = icon("arrowUpFilled", 17);
+        button.innerHTML = icon("arrowUpCircleFilled", 28);
 
         textarea.addEventListener("input", () => {
             button.disabled = !textarea.value.trim();

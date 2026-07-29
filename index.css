@@ -532,28 +532,30 @@ a:hover {
     overflow-y: auto;
 }
 
+/* The icon draws its own filled circle, so the button stays invisible and only
+   provides the hit area — a little larger than the glyph, for thumbs. */
 .comment-send {
     position: absolute;
-    right: 8px;
-    bottom: 8px;
+    right: 7px;
+    bottom: 7px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    /* Tight ratio: the glyph should fill the circle, not float in it. */
-    width: 28px;
-    height: 28px;
+    width: 34px;
+    height: 34px;
     padding: 0;
     border: 0;
     border-radius: 50%;
-    background: var(--text);
-    color: var(--bg);
+    background: transparent;
+    color: var(--text);
     cursor: pointer;
     transition: opacity 0.15s ease;
 }
 
 .comment-send svg {
-    width: 17px;
-    height: 17px;
+    display: block;
+    width: 28px;
+    height: 28px;
 }
 
 .comment-send:hover:not(:disabled) {
@@ -943,28 +945,28 @@ a:hover {
     border-top: 1px solid var(--border);
 }
 
-/* Buttons that carry an icon: the label and the glyph sit on one optical line
-   and the icon nudges in the direction of travel on hover, which previews what
-   the button is about to do. */
+/* Plain text, no box. Previous and Submit carry the same weight because they
+   are the same kind of move — stepping through an agenda — and a filled Submit
+   implied it was saving something, which it is not. Vertical padding keeps a
+   thumb-sized target without drawing one. */
 .nav-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 8px 14px;
-    border: 1px solid var(--border-strong);
-    border-radius: 8px;
+    padding: 10px 2px;
+    border: 0;
     background: transparent;
     font: inherit;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text);
     cursor: pointer;
     transition:
-        border-color var(--dur-fast) var(--ease-out),
+        opacity var(--dur-fast) var(--ease-out),
         transform var(--dur-fast) var(--ease-spring);
 }
 
 .nav-btn:hover {
-    border-color: var(--text);
+    opacity: 0.65;
 }
 
 .nav-btn:active {
@@ -973,7 +975,8 @@ a:hover {
 
 .nav-btn:focus-visible {
     outline: 2px solid var(--text);
-    outline-offset: 2px;
+    outline-offset: 3px;
+    border-radius: 3px;
 }
 
 .nav-btn svg {
@@ -993,41 +996,6 @@ a:hover {
    under space-between; push it to the right so it stays put between questions. */
 .question-nav > :only-child {
     margin-left: auto;
-}
-
-.submit-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 9px 18px;
-    border: 1px solid var(--btn-bg);
-    border-radius: 8px;
-    background: var(--btn-bg);
-    font: inherit;
-    font-size: 13px;
-    color: var(--btn-text);
-    cursor: pointer;
-    transition:
-        background-color var(--dur-fast) var(--ease-out),
-        transform var(--dur-fast) var(--ease-spring);
-}
-
-.submit-btn svg {
-    display: block;
-}
-
-.submit-btn:hover {
-    background: var(--btn-hover);
-    border-color: var(--btn-hover);
-}
-
-.submit-btn:active {
-    transform: scale(0.97);
-}
-
-.submit-btn:focus-visible {
-    outline: 2px solid var(--text);
-    outline-offset: 2px;
 }
 
 .secondary-btn {
