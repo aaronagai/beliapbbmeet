@@ -380,17 +380,57 @@ a:hover {
     color: var(--muted);
 }
 
-.item-comments textarea {
-    width: 100%;
-    min-height: 64px;
+.comment-composer {
+    position: relative;
     margin-top: 10px;
     margin-bottom: 8px;
-    padding: 10px 12px;
+}
+
+.item-comments textarea {
+    display: block;
+    width: 100%;
+    min-height: 64px;
+    max-height: 240px;
+    /* Room on the right so the last line never runs under the send button. */
+    padding: 10px 52px 10px 12px;
     border: 1px solid var(--border-strong);
     background: var(--surface);
     font: inherit;
     color: var(--text);
-    resize: vertical;
+    resize: none;
+    overflow-y: auto;
+}
+
+.comment-send {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: var(--text);
+    color: var(--bg);
+    cursor: pointer;
+    transition: opacity 0.15s ease;
+}
+
+.comment-send svg {
+    width: 18px;
+    height: 18px;
+}
+
+.comment-send:hover:not(:disabled) {
+    opacity: 0.85;
+}
+
+.comment-send:disabled {
+    opacity: 0.3;
+    cursor: default;
 }
 
 .item-comments textarea:focus {

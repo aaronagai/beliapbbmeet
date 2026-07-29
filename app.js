@@ -311,7 +311,7 @@ const backend = {
         const state = { votes: {}, notes: {}, comments: {}, roles: {}, attendees: {} };
 
         votes.forEach((vote) => {
-            const key = `${vote.meeting_id}::${vote.item_id}::${vote.device_id}`;
+            const key = `${vote.meeting_id}::${vote.item_id}::${vote.voter_key}`;
             state.votes[key] = { choice: vote.choice, name: vote.display_name };
         });
 
@@ -342,6 +342,7 @@ const backend = {
             body: {
                 meeting_id: meetingId,
                 item_id: itemId,
+                voter_key: voterKey(name),
                 device_id: getDeviceId(),
                 choice,
                 display_name: name,
@@ -349,9 +350,9 @@ const backend = {
         });
     },
 
-    async clearVote(meetingId, itemId) {
+    async clearVote(meetingId, itemId, name) {
         await rest(
-            `votes?meeting_id=${eq(meetingId)}&item_id=${eq(itemId)}&device_id=${eq(getDeviceId())}`,
+            `votes?meeting_id=${eq(meetingId)}&item_id=${eq(itemId)}&voter_key=${eq(voterKey(name))}`,
             { method: "DELETE" }
         );
     },
@@ -373,7 +374,12 @@ const backend = {
         await rest("attendees", {
             method: "POST",
             prefer: "resolution=merge-duplicates",
-            body: { meeting_id: meetingId, device_id: getDeviceId(), display_name: name },
+            body: {
+                meeting_id: meetingId,
+                voter_key: voterKey(name),
+                device_id: getDeviceId(),
+                display_name: name,
+            },
         });
     },
 
@@ -683,9 +689,16 @@ function clearMemberName() {
     localStorage.removeItem(NAME_KEY);
 }
 
-// A random per-browser id nobody ever sees or types. It is not an identity —
-// names are still self-declared. It exists so one device counts as one vote per
-// question, and so you can change your own vote rather than adding a second one.
+// Votes and attendance are keyed on the name someone gives, normalised so that
+// "Marc", "marc" and " Marc " are one person. That is what lets two members
+// share a phone without overwriting each other, and stops one member voting
+// twice by using their phone and then their laptop.
+function voterKey(name) {
+    return String(name || "").trim().toLowerCase();
+}
+
+// A random per-browser id. Nobody sees or types it, and it no longer decides who
+// a vote belongs to — it is kept only as a record of where a vote came from.
 function getDeviceId() {
     let id = localStorage.getItem(DEVICE_KEY);
     if (!id) {
@@ -1042,7 +1055,7 @@ function renderQuestionPage(meeting, state, memberName) {
         const agenda = document.createElement("ul");
         agenda.className = "agenda";
         agenda.appendChild(
-            renderAgendaItem(meeting, items[index], state, getDeviceId(), false, memberName)
+            renderAgendaItem(meeting, items[index], state, false, memberName)
         );
         agendaRoot.appendChild(agenda);
     }
@@ -1125,12 +1138,11 @@ function renderDiscussionPage() {
     dateEl.textContent = `${formatMeetingDates(meeting)} · ${t("closedLabel")}`;
     summaryEl.textContent = localized(meeting.summary);
 
-    const deviceId = getDeviceId();
     agendaRoot.innerHTML = "";
     const agenda = document.createElement("ul");
     agenda.className = "agenda";
     meeting.items.forEach((item) => {
-        agenda.appendChild(renderAgendaItem(meeting, item, state, deviceId, locked, memberName));
+        agenda.appendChild(renderAgendaItem(meeting, item, state, locked, memberName));
     });
     agendaRoot.appendChild(agenda);
 }
@@ -1166,14 +1178,35 @@ function renderItemComments(meeting, item, state, locked, memberName) {
     wrap.appendChild(list);
 
     if (!locked) {
+        const composer = document.createElement("div");
+        composer.className = "comment-composer";
+
         const textarea = document.createElement("textarea");
         textarea.id = `comment-${meeting.id}-${item.id}`;
         textarea.setAttribute("aria-label", t("comments"));
         textarea.placeholder = t("commentPlaceholder");
+        textarea.rows = 2;
+
+        // The send button sits where the resize grip would be, so the box grows
+        // with what you type instead.
+        const autoGrow = () => {
+            textarea.style.height = "auto";
+            textarea.style.height = `${textarea.scrollHeight}px`;
+        };
 
         const button = document.createElement("button");
         button.type = "button";
-        button.textContent = t("addComment");
+        button.className = "comment-send";
+        button.disabled = true;
+        button.setAttribute("aria-label", t("addComment"));
+        button.title = t("addComment");
+        button.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>`;
+
+        textarea.addEventListener("input", () => {
+            button.disabled = !textarea.value.trim();
+            autoGrow();
+        });
+
         button.addEventListener("click", () => {
             const text = textarea.value.trim();
             if (!text) return;
@@ -1181,14 +1214,15 @@ function renderItemComments(meeting, item, state, locked, memberName) {
             applyChange(() => backend.addComment(meeting.id, item.id, text, memberName));
         });
 
-        wrap.appendChild(textarea);
-        wrap.appendChild(button);
+        composer.appendChild(textarea);
+        composer.appendChild(button);
+        wrap.appendChild(composer);
     }
 
     return wrap;
 }
 
-function renderAgendaItem(meeting, item, state, deviceId, locked, memberName) {
+function renderAgendaItem(meeting, item, state, locked, memberName) {
     const li = document.createElement("li");
     li.className = "agenda-item";
 
@@ -1197,7 +1231,7 @@ function renderAgendaItem(meeting, item, state, deviceId, locked, memberName) {
     question.textContent = localized(item.question);
     li.appendChild(question);
 
-    const myKey = `${voteKey(meeting.id, item.id)}::${deviceId}`;
+    const myKey = `${voteKey(meeting.id, item.id)}::${voterKey(memberName)}`;
     const myVote = normalizeVote(state.votes[myKey]);
     const { counts, names } = countVotes(state.votes, meeting.id, item.id);
 
@@ -1220,7 +1254,7 @@ function renderAgendaItem(meeting, item, state, deviceId, locked, memberName) {
                 const withdraw = Boolean(myVote && myVote.choice === choice);
                 applyChange(() =>
                     withdraw
-                        ? backend.clearVote(meeting.id, item.id)
+                        ? backend.clearVote(meeting.id, item.id, memberName)
                         : backend.castVote(meeting.id, item.id, choice, memberName)
                 );
             });

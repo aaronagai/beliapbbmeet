@@ -19,6 +19,7 @@
 drop function if exists public.admin_save_meeting(text, jsonb);
 drop function if exists public.admin_delete_meeting(text, text);
 drop function if exists public.admin_check(text);
+drop function if exists public.set_voter_key() cascade;
 drop function if exists public.set_admin_passphrase(text);
 
 drop table if exists public.comments;
@@ -62,16 +63,18 @@ create table public.agenda_items (
 
 create index agenda_items_meeting_idx on public.agenda_items (meeting_id, position);
 
--- One row per device per question: the primary key is what stops a single
--- phone from stacking up multiple votes on the same question.
+-- One row per person per question, keyed on their name rather than their device.
+-- Keying on the device meant two members sharing a phone overwrote each other,
+-- and one member on a phone and a laptop counted twice.
 create table public.votes (
     meeting_id   text not null,
     item_id      text not null,
-    device_id    text not null,
+    voter_key    text not null,
+    device_id    text,
     choice       text not null check (choice in ('yes', 'no', 'abstain')),
     display_name text not null default '',
     updated_at   timestamptz not null default now(),
-    primary key (meeting_id, item_id, device_id),
+    primary key (meeting_id, item_id, voter_key),
     foreign key (meeting_id, item_id)
         references public.agenda_items (meeting_id, id) on delete cascade
 );
@@ -92,11 +95,35 @@ create index comments_item_idx on public.comments (meeting_id, item_id, created_
 
 create table public.attendees (
     meeting_id   text not null references public.meetings (id) on delete cascade,
-    device_id    text not null,
+    voter_key    text not null,
+    device_id    text,
     display_name text not null,
     joined_at    timestamptz not null default now(),
-    primary key (meeting_id, device_id)
+    primary key (meeting_id, voter_key)
 );
+
+-- voter_key is derived here rather than trusted from the browser, so it can
+-- never drift from the name shown beside the vote.
+create or replace function public.set_voter_key()
+returns trigger
+language plpgsql
+as $$
+begin
+    new.voter_key := lower(trim(coalesce(new.display_name, '')));
+    if new.voter_key = '' then
+        raise exception 'A name is required';
+    end if;
+    return new;
+end;
+$$;
+
+create trigger votes_set_voter_key
+    before insert or update on public.votes
+    for each row execute function public.set_voter_key();
+
+create trigger attendees_set_voter_key
+    before insert or update on public.attendees
+    for each row execute function public.set_voter_key();
 
 -- Holds the admin passphrase hash. Never readable by the app.
 create table public.app_config (
@@ -357,19 +384,19 @@ values
     ('naming-space', 'keep-name',
      '{"en":"Keep the name “Belia PBB Meeting Space” for now?","bm":"Kekalkan nama “Ruang Mesyuarat Belia PBB” buat masa ini?"}', 0);
 
-insert into public.votes (meeting_id, item_id, device_id, choice, display_name)
+insert into public.votes (meeting_id, item_id, voter_key, device_id, choice, display_name)
 values
-    ('naming-space', 'keep-name', 'seed-demo-1', 'yes',     'Aina'),
-    ('naming-space', 'keep-name', 'seed-demo-2', 'yes',     'Daniel'),
-    ('naming-space', 'keep-name', 'seed-demo-3', 'abstain', 'Sofia');
+    ('naming-space', 'keep-name', 'aina',   'seed-demo-1', 'yes',     'Aina'),
+    ('naming-space', 'keep-name', 'daniel', 'seed-demo-2', 'yes',     'Daniel'),
+    ('naming-space', 'keep-name', 'sofia',  'seed-demo-3', 'abstain', 'Sofia');
 
 insert into public.comments (meeting_id, item_id, device_id, display_name, body)
 values
     ('naming-space', 'keep-name', 'seed-demo-1', 'Aina',
      'Works for now. We can rename later if needed.');
 
-insert into public.attendees (meeting_id, device_id, display_name)
+insert into public.attendees (meeting_id, voter_key, device_id, display_name)
 values
-    ('naming-space', 'seed-demo-1', 'Aina'),
-    ('naming-space', 'seed-demo-2', 'Daniel'),
-    ('naming-space', 'seed-demo-3', 'Sofia');
+    ('naming-space', 'aina',   'seed-demo-1', 'Aina'),
+    ('naming-space', 'daniel', 'seed-demo-2', 'Daniel'),
+    ('naming-space', 'sofia',  'seed-demo-3', 'Sofia');
