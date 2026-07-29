@@ -44,6 +44,35 @@ html[data-theme="dark"] {
     --backdrop: rgba(0, 0, 0, 0.55);
 }
 
+/* Motion
+ *
+ * Three durations and three curves, so movement across the app feels like one
+ * hand made it. `--ease-out` decelerates hard, which is what makes something
+ * arriving on screen feel placed rather than thrown. `--ease-spring` overshoots
+ * slightly and is reserved for direct manipulation — pressing a button — where
+ * a little bounce reads as responsiveness rather than decoration. */
+:root {
+    --dur-fast: 130ms;
+    --dur-base: 220ms;
+    --dur-slow: 340ms;
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+    --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+}
+
+/* Motion is a preference, not a given. Anything here that moves is decoration
+ * on top of a layout that already works, so it can all be switched off. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
 body {
     margin: 0;
     padding: 72px 32px 96px;
@@ -321,9 +350,14 @@ a:hover {
     border-bottom: 1px solid var(--border-soft);
 }
 
+/* One question per screen means it is the subject of the page, not a list item.
+   Size it accordingly. */
 .agenda-question {
-    margin: 0 0 10px;
+    margin: 0 0 18px;
+    font-size: 17px;
     font-weight: 500;
+    line-height: 1.45;
+    letter-spacing: -0.01em;
 }
 
 .vote-row {
@@ -333,18 +367,38 @@ a:hover {
     margin-bottom: 10px;
 }
 
+/* Voting is the one thing every member does, so it gets a comfortable target
+   and a state change you can feel rather than an easter egg. */
 .vote-btn {
-    padding: 6px 12px;
+    min-width: 84px;
+    padding: 9px 16px;
     border: 1px solid var(--border-strong);
+    border-radius: 8px;
     background: var(--surface);
     font: inherit;
     font-size: 13px;
     color: var(--text);
     cursor: pointer;
+    transition:
+        border-color var(--dur-fast) var(--ease-out),
+        background-color var(--dur-fast) var(--ease-out),
+        color var(--dur-fast) var(--ease-out),
+        transform var(--dur-fast) var(--ease-spring);
 }
 
-.vote-btn:hover {
+.vote-btn:hover:not(:disabled) {
     border-color: var(--text);
+}
+
+/* Settles back under the finger. Only on press, where it reads as the button
+   responding rather than the page moving on its own. */
+.vote-btn:active:not(:disabled) {
+    transform: scale(0.96);
+}
+
+.vote-btn:focus-visible {
+    outline: 2px solid var(--text);
+    outline-offset: 2px;
 }
 
 .vote-btn.selected {
@@ -364,10 +418,87 @@ a:hover {
     margin: 0 0 6px;
 }
 
-.vote-roster {
+/* The tally and the button that reveals who voted, on one line. */
+.vote-counts-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 14px;
+}
+
+.vote-counts-row .vote-counts {
+    margin: 0;
+}
+
+.vote-help {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition:
+        color var(--dur-fast) var(--ease-out),
+        background-color var(--dur-fast) var(--ease-out),
+        transform var(--dur-fast) var(--ease-spring);
+}
+
+.vote-help svg {
+    display: block;
+}
+
+.vote-help:hover {
+    color: var(--text);
+    background: var(--border-soft);
+}
+
+.vote-help:active {
+    transform: scale(0.9);
+}
+
+.vote-help:focus-visible {
+    outline: 2px solid var(--text);
+    outline-offset: 2px;
+}
+
+/* Breakdown inside the dialog: each choice is its own block with a count, so
+   the shape of the vote is readable before any name is. */
+.vote-group + .vote-group {
+    margin-top: 20px;
+}
+
+.vote-group-label {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin: 0 0 8px;
     font-size: 13px;
     color: var(--muted);
-    margin: 0 0 14px;
+}
+
+.vote-group-label span {
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+}
+
+.vote-group-names {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.vote-group-names li {
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border-soft);
+}
+
+.vote-group-names li:first-child {
+    border-top: 1px solid var(--border-soft);
 }
 
 .item-comments {
@@ -772,6 +903,48 @@ a:hover {
     margin: 0 0 14px;
     font-size: 13px;
     color: var(--muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* Moving between questions travels in the direction you asked for: Next brings
+   the new question in from the right, Previous from the left. Without it the
+   question simply swaps and it is easy to lose track of where you are in the
+   agenda — the movement is what says "forward" rather than "something changed".
+   Small distance and a hard deceleration, so it registers without being a show. */
+@keyframes question-in-forward {
+    from {
+        opacity: 0;
+        transform: translate3d(16px, 0, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes question-in-back {
+    from {
+        opacity: 0;
+        transform: translate3d(-16px, 0, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+[data-enter="forward"] .agenda-item {
+    animation: question-in-forward var(--dur-base) var(--ease-out) both;
+}
+
+[data-enter="back"] .agenda-item {
+    animation: question-in-back var(--dur-base) var(--ease-out) both;
+}
+
+/* The progress line changes with the question, so it moves with it. Slightly
+   ahead of the question itself, which reads as one thing arriving, not two. */
+[data-progress-enter] {
+    animation: question-in-forward var(--dur-fast) var(--ease-out) both;
 }
 
 .question-nav {
@@ -784,6 +957,52 @@ a:hover {
     border-top: 1px solid var(--border);
 }
 
+/* Buttons that carry an icon: the label and the glyph sit on one optical line
+   and the icon nudges in the direction of travel on hover, which previews what
+   the button is about to do. */
+.nav-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: transparent;
+    font: inherit;
+    font-size: 13px;
+    color: var(--text);
+    cursor: pointer;
+    transition:
+        border-color var(--dur-fast) var(--ease-out),
+        transform var(--dur-fast) var(--ease-spring);
+}
+
+.nav-btn:hover {
+    border-color: var(--text);
+}
+
+.nav-btn:active {
+    transform: scale(0.97);
+}
+
+.nav-btn:focus-visible {
+    outline: 2px solid var(--text);
+    outline-offset: 2px;
+}
+
+.nav-btn svg {
+    display: block;
+    transition: transform var(--dur-base) var(--ease-out);
+}
+
+.nav-btn-next:hover svg {
+    transform: translateX(2px);
+}
+
+.nav-btn-prev:hover svg {
+    transform: translateX(-2px);
+}
+
 /* With no Previous button, the single forward button would otherwise stretch
    under space-between; push it to the right so it stays put between questions. */
 .question-nav > :only-child {
@@ -791,17 +1010,38 @@ a:hover {
 }
 
 .submit-btn {
-    padding: 8px 18px;
-    border: 1px solid var(--text);
-    background: var(--text);
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    border: 1px solid var(--btn-bg);
+    border-radius: 8px;
+    background: var(--btn-bg);
     font: inherit;
     font-size: 13px;
-    color: var(--bg);
+    color: var(--btn-text);
     cursor: pointer;
+    transition:
+        background-color var(--dur-fast) var(--ease-out),
+        transform var(--dur-fast) var(--ease-spring);
+}
+
+.submit-btn svg {
+    display: block;
 }
 
 .submit-btn:hover {
-    opacity: 0.85;
+    background: var(--btn-hover);
+    border-color: var(--btn-hover);
+}
+
+.submit-btn:active {
+    transform: scale(0.97);
+}
+
+.submit-btn:focus-visible {
+    outline: 2px solid var(--text);
+    outline-offset: 2px;
 }
 
 .secondary-btn {
@@ -856,16 +1096,47 @@ footer {
 
 .attendees-dialog {
     width: min(92vw, 420px);
+    max-height: min(80vh, 620px);
     margin: auto;
     padding: 24px;
     border: 1px solid var(--border);
+    border-radius: 14px;
     background: var(--surface);
     color: var(--text);
     font: inherit;
+    overflow-y: auto;
+}
+
+/* A dialog that appears instantly reads as a glitch; one that rises slightly
+   reads as a layer coming forward. Short, because it sits between the member
+   and what they were doing. */
+.attendees-dialog[open] {
+    animation: dialog-in var(--dur-base) var(--ease-out) both;
+}
+
+@keyframes dialog-in {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 8px, 0) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0) scale(1);
+    }
 }
 
 .attendees-dialog::backdrop {
     background: var(--backdrop);
+    animation: backdrop-in var(--dur-base) var(--ease-out) both;
+}
+
+@keyframes backdrop-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
 }
 
 .attendees-dialog-header {
@@ -988,4 +1259,165 @@ footer {
         grid-template-columns: 1fr;
         gap: 14px;
     }
+}
+
+/* ---------------------------------------------------------------------------
+ * Icons and entrances
+ * ------------------------------------------------------------------------- */
+
+.attendees-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: color var(--dur-fast) var(--ease-out);
+}
+
+.attendees-icon {
+    display: inline-flex;
+    align-items: center;
+}
+
+.attendees-icon svg {
+    display: block;
+}
+
+.attendees-link:hover {
+    text-decoration: none;
+}
+
+.attendees-link:hover .attendees-icon {
+    color: var(--text);
+}
+
+/* Admin actions are icon-only, so the hit area has to be built rather than
+   inherited from the text. 32px keeps them thumb-sized on a phone. */
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition:
+        color var(--dur-fast) var(--ease-out),
+        background-color var(--dur-fast) var(--ease-out);
+}
+
+.icon-btn svg {
+    display: block;
+}
+
+.icon-btn:hover {
+    color: var(--text);
+    background: var(--border-soft);
+    text-decoration: none;
+}
+
+.icon-btn:focus-visible {
+    outline: 2px solid var(--text);
+    outline-offset: 2px;
+}
+
+/* Delete only turns red on approach. Red at rest would make the whole admin
+   list feel alarming when nothing is wrong. */
+.icon-btn-danger:hover {
+    color: #c0503c;
+}
+
+.admin-add-btn {
+    border-radius: 8px;
+    transition:
+        color var(--dur-fast) var(--ease-out),
+        background-color var(--dur-fast) var(--ease-out),
+        transform var(--dur-fast) var(--ease-spring);
+}
+
+.admin-add-btn svg {
+    display: block;
+}
+
+.admin-add-btn:hover {
+    background: var(--border-soft);
+}
+
+.admin-add-btn:active {
+    transform: scale(0.94);
+}
+
+.lock-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lock-icon {
+    display: inline-flex;
+    color: var(--muted);
+}
+
+.lock-icon svg {
+    display: block;
+}
+
+/* The meeting list is the first thing anyone sees. Rows fade up in sequence so
+   the page assembles itself instead of appearing all at once — the stagger is
+   small enough to feel like one movement, not a queue. */
+@keyframes row-in {
+    from {
+        opacity: 0;
+        transform: translate3d(0, 6px, 0);
+    }
+    to {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+.list li {
+    animation: row-in var(--dur-slow) var(--ease-out) both;
+    animation-delay: calc(var(--row-index, 0) * 45ms);
+}
+
+.list li a {
+    transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+/* The composer button already animates opacity; give it the same press as the
+   other buttons so every tappable thing in the app behaves the same way. */
+.comment-send {
+    transition:
+        opacity var(--dur-fast) var(--ease-out),
+        transform var(--dur-fast) var(--ease-spring);
+}
+
+.comment-send:active:not(:disabled) {
+    transform: scale(0.92);
+}
+
+.comment-send:focus-visible {
+    outline: 2px solid var(--text);
+    outline-offset: 2px;
+}
+
+.item-comments textarea {
+    border-radius: 10px;
+    transition: border-color var(--dur-fast) var(--ease-out);
+}
+
+.name-form input,
+.name-form button {
+    border-radius: 8px;
+    transition:
+        border-color var(--dur-fast) var(--ease-out),
+        background-color var(--dur-fast) var(--ease-out),
+        transform var(--dur-fast) var(--ease-spring);
+}
+
+.name-form button:active {
+    transform: scale(0.97);
 }

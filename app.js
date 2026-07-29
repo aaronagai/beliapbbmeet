@@ -109,10 +109,13 @@ const I18N = {
         adminWrongPass: "Wrong admin passphrase.",
         loadFailed: "Could not reach the meeting space. Check your connection and refresh.",
         questionProgress: (n, total) => `Question ${n} of ${total}`,
-        previousQuestion: "← Previous",
-        nextQuestion: "Next →",
+        previousQuestion: "Previous",
+        nextQuestion: "Next",
         submitAnswers: "Submit",
         noQuestions: "No questions on this agenda yet.",
+        voteBreakdown: "Who voted what",
+        showVoters: "See who voted",
+        noVotesYet: "No votes on this question yet.",
     },
     bm: {
         title: "Ruang Mesyuarat Belia PBB",
@@ -214,10 +217,13 @@ const I18N = {
         adminWrongPass: "Kata laluan admin salah.",
         loadFailed: "Tidak dapat menghubungi ruang mesyuarat. Semak sambungan anda dan muat semula.",
         questionProgress: (n, total) => `Soalan ${n} daripada ${total}`,
-        previousQuestion: "← Sebelumnya",
-        nextQuestion: "Seterusnya →",
+        previousQuestion: "Sebelumnya",
+        nextQuestion: "Seterusnya",
         submitAnswers: "Hantar",
         noQuestions: "Belum ada soalan dalam agenda ini.",
+        voteBreakdown: "Siapa mengundi apa",
+        showVoters: "Lihat siapa mengundi",
+        noVotesYet: "Belum ada undian untuk soalan ini.",
     },
 };
 
@@ -447,6 +453,14 @@ async function applyChange(work) {
         console.error("[belia] could not reload", error);
     }
     renderAll();
+}
+
+// Re-applying a class does not replay a CSS animation unless the element is
+// reflowed in between, so force it. Used when content changes in place.
+function restartAnimation(el, dataKey) {
+    delete el.dataset[dataKey];
+    void el.offsetWidth;
+    el.dataset[dataKey] = "";
 }
 
 function showError(message) {
@@ -739,12 +753,19 @@ function currentQuestionIndex(total) {
     return Math.min(Math.max(parsed - 1, 0), total - 1);
 }
 
+// Which way the last move went, so the incoming question can animate in from
+// that side. Reset after each render: a fresh page load should not animate as
+// though it arrived from somewhere.
+let questionDirection = null;
+
 // Moving between questions swaps the URL without a reload, so the member is not
 // waiting on the network between questions. Back and forward still work.
 function goToQuestion(meetingId, index) {
+    const from = currentQuestionIndex(Number.MAX_SAFE_INTEGER);
+    questionDirection = index >= from ? "forward" : "back";
     window.history.pushState({}, "", meetingUrl(meetingId, index + 1));
     renderAll();
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function discussionUrl(id) {
@@ -851,9 +872,13 @@ function renderHomeMeetings() {
 function renderMeetingList(meetings) {
     const list = document.createElement("ul");
     list.className = "list";
+    // Each row carries its position so the stylesheet can stagger the entrance.
+    let rowIndex = 0;
 
     meetings.forEach((meeting) => {
         const li = document.createElement("li");
+        li.style.setProperty("--row-index", String(rowIndex));
+        rowIndex += 1;
         li.innerHTML = `
             <span class="list-title">
                 <a href="${meetingUrl(meeting.id)}">${escapeHtml(localized(meeting.title))}</a>
@@ -905,6 +930,21 @@ function collectAttendees(meeting, state) {
     );
 }
 
+function paintStaticIcons() {
+    const attendeesIcon = document.querySelector(".attendees-icon");
+    if (attendeesIcon && !attendeesIcon.childElementCount) {
+        attendeesIcon.innerHTML = icon("users", 14);
+    }
+    const addBtn = document.getElementById("admin-show-add");
+    if (addBtn && !addBtn.childElementCount) {
+        addBtn.innerHTML = icon("plus", 18);
+    }
+    const lockHeading = document.querySelector("#admin-lock .lock-icon");
+    if (lockHeading && !lockHeading.childElementCount) {
+        lockHeading.innerHTML = icon("lock", 15);
+    }
+}
+
 function renderAttendeesList(meeting, state) {
     const list = document.getElementById("attendees-list");
     if (!list) return;
@@ -920,6 +960,63 @@ function renderAttendeesList(meeting, state) {
         const li = document.createElement("li");
         li.innerHTML = `<span class="list-title">${escapeHtml(name)}</span>`;
         list.appendChild(li);
+    });
+}
+
+function openVotesDialog(meeting, item, names) {
+    const dialog = document.getElementById("votes-dialog");
+    const body = document.getElementById("votes-breakdown");
+    const questionEl = document.getElementById("votes-dialog-question");
+    if (!dialog || !body) return;
+
+    if (questionEl) questionEl.textContent = localized(item.question);
+
+    body.innerHTML = "";
+    const groups = [
+        ["yes", t("yes"), names.yes],
+        ["no", t("no"), names.no],
+        ["abstain", t("abstain"), names.abstain],
+    ].filter(([, , who]) => who.length);
+
+    if (!groups.length) {
+        body.innerHTML = `<p class="empty">${escapeHtml(t("noVotesYet"))}</p>`;
+    } else {
+        groups.forEach(([choice, label, who]) => {
+            const group = document.createElement("div");
+            group.className = `vote-group vote-group-${choice}`;
+            group.innerHTML =
+                `<p class="vote-group-label">${escapeHtml(label)} <span>${who.length}</span></p>` +
+                `<ul class="vote-group-names">${who
+                    .map((name) => `<li>${escapeHtml(name)}</li>`)
+                    .join("")}</ul>`;
+            body.appendChild(group);
+        });
+    }
+
+    showDialog(dialog);
+}
+
+function showDialog(dialog) {
+    if (typeof dialog.showModal === "function") dialog.showModal();
+    else dialog.setAttribute("open", "open");
+}
+
+function hideDialog(dialog) {
+    if (typeof dialog.close === "function") dialog.close();
+    else dialog.removeAttribute("open");
+}
+
+function setupVotesDialog() {
+    const dialog = document.getElementById("votes-dialog");
+    if (!dialog || dialog.dataset.bound === "true") return;
+    dialog.dataset.bound = "true";
+
+    const closeBtn = document.getElementById("votes-close");
+    if (closeBtn) closeBtn.addEventListener("click", () => hideDialog(dialog));
+
+    // Clicking the backdrop, which is the dialog element itself, closes it.
+    dialog.addEventListener("click", (event) => {
+        if (event.target === dialog) hideDialog(dialog);
     });
 }
 
@@ -1048,7 +1145,10 @@ function renderQuestionPage(meeting, state, memberName) {
 
     const index = currentQuestionIndex(items.length);
 
-    if (progressEl) progressEl.textContent = t("questionProgress")(index + 1, items.length);
+    if (progressEl) {
+        progressEl.textContent = t("questionProgress")(index + 1, items.length);
+        if (questionDirection) restartAnimation(progressEl, "progressEnter");
+    }
 
     if (agendaRoot) {
         agendaRoot.innerHTML = "";
@@ -1058,9 +1158,15 @@ function renderQuestionPage(meeting, state, memberName) {
             renderAgendaItem(meeting, items[index], state, false, memberName)
         );
         agendaRoot.appendChild(agenda);
+
+        if (questionDirection) agendaRoot.dataset.enter = questionDirection;
+        else delete agendaRoot.dataset.enter;
     }
 
     renderQuestionNav(meeting, index, items.length);
+
+    // A vote re-renders the page too, and that should not replay the slide.
+    questionDirection = null;
 }
 
 function renderQuestionNav(meeting, index, total) {
@@ -1071,8 +1177,8 @@ function renderQuestionNav(meeting, index, total) {
     if (index > 0) {
         const previous = document.createElement("button");
         previous.type = "button";
-        previous.className = "secondary-btn";
-        previous.textContent = t("previousQuestion");
+        previous.className = "nav-btn nav-btn-prev";
+        previous.innerHTML = `${icon("chevronLeft", 15)}<span>${escapeHtml(t("previousQuestion"))}</span>`;
         previous.addEventListener("click", () => goToQuestion(meeting.id, index - 1));
         navRoot.appendChild(previous);
     }
@@ -1080,8 +1186,10 @@ function renderQuestionNav(meeting, index, total) {
     const isLast = index === total - 1;
     const forward = document.createElement("button");
     forward.type = "button";
-    forward.className = isLast ? "submit-btn" : "secondary-btn";
-    forward.textContent = isLast ? t("submitAnswers") : t("nextQuestion");
+    forward.className = isLast ? "submit-btn" : "nav-btn nav-btn-next";
+    forward.innerHTML = isLast
+        ? `<span>${escapeHtml(t("submitAnswers"))}</span>${icon("check", 15)}`
+        : `<span>${escapeHtml(t("nextQuestion"))}</span>${icon("chevronRight", 15)}`;
     forward.addEventListener("click", () => {
         // Votes are already saved as they are cast, so Submit is just the way
         // out of the last question, not the thing that records anything.
@@ -1200,7 +1308,7 @@ function renderItemComments(meeting, item, state, locked, memberName) {
         button.disabled = true;
         button.setAttribute("aria-label", t("addComment"));
         button.title = t("addComment");
-        button.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>`;
+        button.innerHTML = icon("arrowUp", 18);
 
         textarea.addEventListener("input", () => {
             button.disabled = !textarea.value.trim();
@@ -1266,18 +1374,28 @@ function renderAgendaItem(meeting, item, state, locked, memberName) {
     countsEl.className = "vote-counts";
     countsEl.textContent = t("votes")(counts);
 
-    const roster = document.createElement("p");
-    roster.className = "vote-roster";
-    const parts = [
-        t("voteBy")(t("yes"), names.yes),
-        t("voteBy")(t("no"), names.no),
-        t("voteBy")(t("abstain"), names.abstain),
-    ].filter(Boolean);
-    roster.textContent = parts.join(" · ");
+    // The tally stays on the page; who voted which way is one tap away. Names on
+    // every question made the page long and pushed the next question out of
+    // reach, and the breakdown is something you look up, not something you read
+    // every time.
+    const countsRow = document.createElement("div");
+    countsRow.className = "vote-counts-row";
+    countsRow.appendChild(countsEl);
+
+    const total = counts.yes + counts.no + counts.abstain;
+    if (total) {
+        const help = document.createElement("button");
+        help.type = "button";
+        help.className = "vote-help";
+        help.innerHTML = icon("helpSquare", 15);
+        help.setAttribute("aria-label", t("showVoters"));
+        help.title = t("showVoters");
+        help.addEventListener("click", () => openVotesDialog(meeting, item, names));
+        countsRow.appendChild(help);
+    }
 
     li.appendChild(row);
-    li.appendChild(countsEl);
-    if (parts.length) li.appendChild(roster);
+    li.appendChild(countsRow);
     li.appendChild(renderItemComments(meeting, item, state, locked, memberName));
     return li;
 }
@@ -1315,8 +1433,9 @@ function renderAdminListPage() {
 
     const ul = document.createElement("ul");
     ul.className = "list";
-    meetings.forEach((meeting) => {
+    meetings.forEach((meeting, index) => {
         const li = document.createElement("li");
+        li.style.setProperty("--row-index", String(index));
         const statusLabel =
             meeting.status === "closed" ? t("adminStatusClosed") : t("adminStatusActive");
         li.innerHTML = `
@@ -1325,8 +1444,8 @@ function renderAdminListPage() {
                 <span class="meeting-meta"> · ${escapeHtml(statusLabel)}</span>
             </span>
             <span class="admin-meeting-actions">
-                <a class="text-btn" href="${adminMeetingUrl(meeting.id)}">${escapeHtml(t("adminEdit"))}</a>
-                <button type="button" class="text-btn" data-delete-meeting="${escapeHtml(meeting.id)}">${escapeHtml(t("adminDelete"))}</button>
+                <a class="icon-btn" href="${adminMeetingUrl(meeting.id)}" title="${escapeHtml(t("adminEdit"))}" aria-label="${escapeHtml(t("adminEdit"))}">${icon("edit", 15)}</a>
+                <button type="button" class="icon-btn icon-btn-danger" data-delete-meeting="${escapeHtml(meeting.id)}" title="${escapeHtml(t("adminDelete"))}" aria-label="${escapeHtml(t("adminDelete"))}">${icon("trash", 15)}</button>
             </span>
         `;
         ul.appendChild(li);
@@ -1639,6 +1758,7 @@ function setupAdminMeetingForm() {
 }
 
 function renderAll() {
+    paintStaticIcons();
     if (isAdminMeetingPage()) {
         renderAdminMeetingPage();
         renderAdminLock();
@@ -1742,6 +1862,7 @@ async function init() {
     setupThemeToggle();
     setupNameGate();
     setupAttendeesDialog();
+    setupVotesDialog();
     setupAdminLock();
 
     // Everything below this line reads meeting data, so warm the cache first.

@@ -41,7 +41,7 @@
             </p>
             <div class="title-row">
                 <h1 id="meeting-title">Meeting</h1>
-                <button type="button" id="attendees-open" class="attendees-link">• <span data-i18n="attendees">Attendees</span></button>
+                <button type="button" id="attendees-open" class="attendees-link"><span class="attendees-icon" aria-hidden="true"></span><span data-i18n="attendees">Attendees</span></button>
             </div>
             <p class="updated" id="meeting-date"></p>
             <div class="meeting-roles" id="meeting-roles">
@@ -104,6 +104,17 @@
         </div>
     </footer>
 
+
+    <dialog id="votes-dialog" class="attendees-dialog">
+        <div class="attendees-dialog-header">
+            <h2 id="votes-dialog-title" data-i18n="voteBreakdown">Who voted what</h2>
+            <button type="button" id="votes-close" class="text-btn" data-i18n="close">Close</button>
+        </div>
+        <p class="attendees-dialog-hint" id="votes-dialog-question"></p>
+        <div id="votes-breakdown"></div>
+    </dialog>
+
+    <script src="icons.js"></script>
     <script src="app.js"></script>
 </body>
 
