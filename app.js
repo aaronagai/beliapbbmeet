@@ -1,8 +1,11 @@
-const STORAGE_KEY = "belia-pbb-meeting-space-v1";
+// Meetings, votes and comments live in the shared database. What stays on the
+// device is only what is genuinely per-device: language, theme, the name you
+// last typed, and the anonymous device id used for one-vote-per-phone.
 const LANG_KEY = "belia-pbb-lang";
 const NAME_KEY = "belia-pbb-member-name";
 const THEME_KEY = "belia-pbb-theme";
-const MEETINGS_KEY = "belia-pbb-meetings-v1";
+const DEVICE_KEY = "belia-pbb-voter-id";
+const ADMIN_PASS_KEY = "belia-pbb-admin-pass";
 const ADMIN_NOTICE_KEY = "belia-pbb-admin-notice";
 
 const I18N = {
@@ -94,6 +97,17 @@ const I18N = {
         adminHome: "← Meeting space",
         adminBackToList: "← Meetings",
         adminView: "Open",
+        adminConfirmDelete: (name) =>
+            `Delete "${name}"? This removes its agenda, votes and comments for everyone.`,
+        adminLockTitle: "Admin passphrase",
+        adminLockHint:
+            "Enter the admin passphrase to add or change meetings. Members do not need this.",
+        adminLockLabel: "Passphrase",
+        adminUnlock: "Unlock",
+        adminLock: "Lock",
+        adminLocked: "Locked. Enter the passphrase to make changes.",
+        adminWrongPass: "Wrong admin passphrase.",
+        loadFailed: "Could not reach the meeting space. Check your connection and refresh.",
     },
     bm: {
         title: "Ruang Mesyuarat Belia PBB",
@@ -183,132 +197,247 @@ const I18N = {
         adminHome: "← Ruang mesyuarat",
         adminBackToList: "← Mesyuarat",
         adminView: "Buka",
+        adminConfirmDelete: (name) =>
+            `Padam "${name}"? Ini akan membuang agenda, undian dan komennya untuk semua orang.`,
+        adminLockTitle: "Kata laluan admin",
+        adminLockHint:
+            "Masukkan kata laluan admin untuk menambah atau mengubah mesyuarat. Ahli tidak memerlukannya.",
+        adminLockLabel: "Kata laluan",
+        adminUnlock: "Buka kunci",
+        adminLock: "Kunci",
+        adminLocked: "Berkunci. Masukkan kata laluan untuk membuat perubahan.",
+        adminWrongPass: "Kata laluan admin salah.",
+        loadFailed: "Tidak dapat menghubungi ruang mesyuarat. Semak sambungan anda dan muat semula.",
     },
 };
 
-const DEFAULT_MEETINGS = [
-    {
-        id: "kickoff-2026",
-        status: "active",
-        startDate: { en: "Jul 28, 2026", bm: "28 Jul 2026" },
-        endDate: { en: "Aug 4, 2026", bm: "4 Ogos 2026" },
-        title: {
-            en: "Belia PBB kickoff",
-            bm: "Kickoff Belia PBB",
-        },
-        summary: {
-            en: "First async meeting for Belia PBB. Align on how we use this space and what we want to focus on next.",
-            bm: "Mesyuarat tidak segerak pertama untuk Belia PBB. Selaraskan cara kita guna ruang ini dan fokus seterusnya.",
-        },
-        chair: "Aina Rahman",
-        minutesBy: "Daniel Ng",
-        items: [
-            {
-                id: "use-async",
-                question: {
-                    en: "Should we keep this async meeting space as our default way to decide small matters?",
-                    bm: "Patutkah kita kekalkan ruang mesyuarat tidak segerak ini sebagai cara lalai untuk keputusan kecil?",
-                },
-            },
-            {
-                id: "monthly-checkin",
-                question: {
-                    en: "Should we run one async check-in every month?",
-                    bm: "Patutkah kita adakan satu check-in tidak segerak setiap bulan?",
-                },
-            },
-        ],
-    },
-    {
-        id: "programme-ideas",
-        status: "active",
-        startDate: { en: "Jul 28, 2026", bm: "28 Jul 2026" },
-        endDate: { en: "Aug 4, 2026", bm: "4 Ogos 2026" },
-        title: {
-            en: "Programme ideas for Q3",
-            bm: "Idea program untuk Suku 3",
-        },
-        summary: {
-            en: "Share and vote on early programme ideas for Belia PBB members. Add notes with context before voting.",
-            bm: "Kongsi dan undi idea awal program untuk ahli Belia PBB. Tambah nota dengan konteks sebelum mengundi.",
-        },
-        chair: "",
-        minutesBy: "",
-        items: [
-            {
-                id: "community-outreach",
-                question: {
-                    en: "Prioritise a community outreach day this quarter?",
-                    bm: "Utamakan hari jangkauan komuniti pada suku ini?",
-                },
-            },
-            {
-                id: "skills-session",
-                question: {
-                    en: "Host a short skills / leadership session for members?",
-                    bm: "Anjur sesi kemahiran / kepimpinan ringkas untuk ahli?",
-                },
-            },
-            {
-                id: "town-dialogue",
-                question: {
-                    en: "Organise a youth dialogue with local leaders?",
-                    bm: "Anjur dialog belia dengan pemimpin tempatan?",
-                },
-            },
-        ],
-    },
-    {
-        id: "naming-space",
-        status: "closed",
-        startDate: { en: "Jul 14, 2026", bm: "14 Jul 2026" },
-        endDate: { en: "Jul 20, 2026", bm: "20 Jul 2026" },
-        title: {
-            en: "Naming this meeting space",
-            bm: "Penamaan ruang mesyuarat ini",
-        },
-        summary: {
-            en: "Closed example meeting. Votes are locked.",
-            bm: "Contoh mesyuarat ditutup. Undian dikunci.",
-        },
-        chair: "Sofia Tan",
-        minutesBy: "Aina Rahman",
-        minutes: {
-            en: "The meeting agreed to keep the name “Belia PBB Meeting Space” for now. Two members voted Yes and one abstained. Aina noted that the name can be revisited later if needed.",
-            bm: "Mesyuarat bersetuju mengekalkan nama “Ruang Mesyuarat Belia PBB” buat masa ini. Dua ahli mengundi Ya dan seorang abstain. Aina mencatat bahawa nama boleh dinilai semula kemudian jika perlu.",
-        },
-        items: [
-            {
-                id: "keep-name",
-                question: {
-                    en: "Keep the name “Belia PBB Meeting Space” for now?",
-                    bm: "Kekalkan nama “Ruang Mesyuarat Belia PBB” buat masa ini?",
-                },
-            },
-        ],
-    },
-];
+/* ---------------------------------------------------------------------------
+ * Data layer
+ *
+ * Everything lives in one shared Postgres database, so all members see the
+ * same meetings, votes and comments. See supabase/schema.sql for the tables
+ * and the rules the database enforces on its own.
+ *
+ * This key is a publishable key: it is meant to ship in the page, and it grants
+ * nothing on its own. What a caller may read or write is decided by the row
+ * level security policies in the schema, not by holding this string.
+ * ------------------------------------------------------------------------- */
 
-function cloneMeetings(meetings) {
-    return JSON.parse(JSON.stringify(meetings));
+const SUPABASE_URL = "https://nyehctfktzudmnvjiaaf.supabase.co";
+const SUPABASE_KEY = "sb_publishable_Gs_uM0D8Mh9rx6s6qLv4Eg_MAlqiwhJ";
+
+async function rest(path, { method = "GET", body, prefer } = {}) {
+    const headers = {
+        apikey: SUPABASE_KEY,
+        Authorization: `Bearer ${SUPABASE_KEY}`,
+    };
+    if (body !== undefined) headers["Content-Type"] = "application/json";
+    if (prefer) headers.Prefer = prefer;
+
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+        method,
+        headers,
+        body: body === undefined ? undefined : JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+        let message = "";
+        try {
+            message = (await response.json()).message || "";
+        } catch {
+            /* non-JSON error body */
+        }
+        throw new Error(message || `Request failed (${response.status})`);
+    }
+
+    if (response.status === 204) return null;
+    const text = await response.text();
+    return text ? JSON.parse(text) : null;
+}
+
+function eq(value) {
+    return `eq.${encodeURIComponent(value)}`;
+}
+
+const backend = {
+    // Meetings and their agenda arrive as two tables and are stitched back into
+    // the nested shape the render code already expects.
+    async fetchMeetings() {
+        const [rows, items] = await Promise.all([
+            rest("meetings?select=*&order=created_at.desc"),
+            rest("agenda_items?select=*&order=meeting_id.asc,position.asc"),
+        ]);
+
+        const agenda = new Map();
+        items.forEach((item) => {
+            if (!agenda.has(item.meeting_id)) agenda.set(item.meeting_id, []);
+            agenda.get(item.meeting_id).push({ id: item.id, question: item.question });
+        });
+
+        return rows.map((row) => {
+            const meeting = {
+                id: row.id,
+                status: row.status,
+                title: row.title,
+                summary: row.summary,
+                startDate: row.start_date,
+                endDate: row.end_date,
+                chair: row.chair,
+                minutesBy: row.minutes_by,
+                items: agenda.get(row.id) || [],
+            };
+            if (row.minutes) meeting.minutes = row.minutes;
+            return meeting;
+        });
+    },
+
+    async fetchState() {
+        const [votes, comments, attendees] = await Promise.all([
+            rest("votes?select=*"),
+            rest("comments?select=*&order=created_at.asc"),
+            rest("attendees?select=*&order=joined_at.asc"),
+        ]);
+
+        const state = { votes: {}, notes: {}, comments: {}, roles: {}, attendees: {} };
+
+        votes.forEach((vote) => {
+            const key = `${vote.meeting_id}::${vote.item_id}::${vote.device_id}`;
+            state.votes[key] = { choice: vote.choice, name: vote.display_name };
+        });
+
+        comments.forEach((comment) => {
+            const key = `${comment.meeting_id}::${comment.item_id}`;
+            if (!state.comments[key]) state.comments[key] = [];
+            state.comments[key].push({
+                text: comment.body,
+                name: comment.display_name,
+                when: new Date(comment.created_at).toLocaleString(),
+            });
+        });
+
+        attendees.forEach((attendee) => {
+            if (!state.attendees[attendee.meeting_id]) state.attendees[attendee.meeting_id] = [];
+            state.attendees[attendee.meeting_id].push(attendee.display_name);
+        });
+
+        return state;
+    },
+
+    // Writes are one row at a time rather than saving a whole blob, so two
+    // members acting at once cannot overwrite each other's work.
+    async castVote(meetingId, itemId, choice, name) {
+        await rest("votes", {
+            method: "POST",
+            prefer: "resolution=merge-duplicates",
+            body: {
+                meeting_id: meetingId,
+                item_id: itemId,
+                device_id: getDeviceId(),
+                choice,
+                display_name: name,
+            },
+        });
+    },
+
+    async clearVote(meetingId, itemId) {
+        await rest(
+            `votes?meeting_id=${eq(meetingId)}&item_id=${eq(itemId)}&device_id=${eq(getDeviceId())}`,
+            { method: "DELETE" }
+        );
+    },
+
+    async addComment(meetingId, itemId, text, name) {
+        await rest("comments", {
+            method: "POST",
+            body: {
+                meeting_id: meetingId,
+                item_id: itemId,
+                device_id: getDeviceId(),
+                display_name: name,
+                body: text,
+            },
+        });
+    },
+
+    async joinMeeting(meetingId, name) {
+        await rest("attendees", {
+            method: "POST",
+            prefer: "resolution=merge-duplicates",
+            body: { meeting_id: meetingId, device_id: getDeviceId(), display_name: name },
+        });
+    },
+
+    // Meeting writes go through database functions that check the passphrase.
+    // There is no policy allowing the browser to touch these tables directly.
+    async saveMeeting(passphrase, meeting) {
+        return rest("rpc/admin_save_meeting", {
+            method: "POST",
+            body: { p_passphrase: passphrase, p_meeting: meeting },
+        });
+    },
+
+    async removeMeeting(passphrase, id) {
+        return rest("rpc/admin_delete_meeting", {
+            method: "POST",
+            body: { p_passphrase: passphrase, p_id: id },
+        });
+    },
+};
+
+/* ---------------------------------------------------------------------------
+ * Cache
+ *
+ * Reads are served synchronously from `cache` so the render code stays simple.
+ * After every write we refetch and repaint, which also picks up whatever other
+ * members changed in the meantime.
+ * ------------------------------------------------------------------------- */
+
+const cache = {
+    meetings: null,
+    state: null,
+};
+
+function clone(value) {
+    return JSON.parse(JSON.stringify(value));
+}
+
+async function loadAll() {
+    const [meetings, state] = await Promise.all([
+        backend.fetchMeetings(),
+        backend.fetchState(),
+    ]);
+    cache.meetings = meetings;
+    cache.state = state;
 }
 
 function getMeetings() {
-    try {
-        const raw = localStorage.getItem(MEETINGS_KEY);
-        if (!raw) {
-            localStorage.setItem(MEETINGS_KEY, JSON.stringify(DEFAULT_MEETINGS));
-            return cloneMeetings(DEFAULT_MEETINGS);
-        }
-        const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed : cloneMeetings(DEFAULT_MEETINGS);
-    } catch {
-        return cloneMeetings(DEFAULT_MEETINGS);
-    }
+    return cache.meetings ? clone(cache.meetings) : [];
 }
 
-function saveMeetings(meetings) {
-    localStorage.setItem(MEETINGS_KEY, JSON.stringify(meetings));
+// Every member-facing write funnels through here so that a failure always ends
+// with the screen showing what the database actually holds, never a local guess.
+async function applyChange(work) {
+    try {
+        await work();
+        showError("");
+    } catch (error) {
+        console.error("[belia] could not save", error);
+        showError(error.message);
+    }
+
+    try {
+        await loadAll();
+    } catch (error) {
+        console.error("[belia] could not reload", error);
+    }
+    renderAll();
+}
+
+function showError(message) {
+    document.querySelectorAll("[data-error]").forEach((el) => {
+        el.textContent = message || "";
+        el.hidden = !message;
+    });
 }
 
 function slugify(value) {
@@ -361,89 +490,64 @@ function formatMeetingDates(meeting) {
     return `${start} – ${end}`;
 }
 
-function createMeetingFromForm({
-    title,
-    startDate,
-    endDate,
-    summary,
-    chair,
-    minutesBy,
-    questions,
-}) {
-    const meetings = getMeetings();
-    const id = uniqueMeetingId(title, meetings);
-    const agenda = (questions || [])
-        .map((question) => String(question || "").trim())
-        .filter(Boolean);
+// Saving a meeting rewrites its agenda, and a question that disappears takes its
+// votes with it. So keep the id of any question whose wording is unchanged —
+// those votes survive an edit. Reworded questions get a fresh id and start over,
+// which is right: people voted on the old wording, not the new one.
+function buildAgendaItems(questions, existing) {
+    const previous = new Map();
+    (existing?.items || []).forEach((item) => {
+        const text = String(item.question?.en ?? item.question ?? "").trim();
+        if (text && !previous.has(text)) previous.set(text, item.id);
+    });
 
-    const start = bilingual(startDate);
-    const end = bilingual(endDate || startDate);
-
-    const meeting = {
-        id,
-        status: "active",
-        startDate: start,
-        endDate: end,
-        title: bilingual(title),
-        summary: bilingual(summary),
-        chair: String(chair || "").trim(),
-        minutesBy: String(minutesBy || "").trim(),
-        items: agenda.map((question, index) => ({
-            id: `q${index + 1}`,
-            question: bilingual(question),
-        })),
-    };
-
-    meetings.unshift(meeting);
-    saveMeetings(meetings);
-    return meeting;
+    const used = new Set();
+    return questions.map((question, index) => {
+        let id = previous.get(question);
+        if (!id || used.has(id)) {
+            id = `q${index + 1}`;
+            let n = index + 1;
+            while (used.has(id)) {
+                n += 1;
+                id = `q${n}`;
+            }
+        }
+        used.add(id);
+        return { id, question: bilingual(question) };
+    });
 }
 
-function updateMeetingFromForm(id, payload) {
+function buildMeetingPayload(id, payload) {
     const meetings = getMeetings();
-    const index = meetings.findIndex((meeting) => meeting.id === id);
-    if (index < 0) return null;
+    const existing = id ? meetings.find((meeting) => meeting.id === id) : null;
 
-    const agenda = (payload.questions || [])
+    const questions = (payload.questions || [])
         .map((question) => String(question || "").trim())
         .filter(Boolean);
 
-    const current = meetings[index];
-    const start = bilingual(payload.startDate);
-    const end = bilingual(payload.endDate || payload.startDate);
-    const updated = {
-        ...current,
-        startDate: start,
-        endDate: end,
+    const status = payload.status === "closed" ? "closed" : "active";
+    const minutesText = String(payload.minutes || "").trim();
+
+    return {
+        id: id || uniqueMeetingId(payload.title, meetings),
+        status,
         title: bilingual(payload.title),
         summary: bilingual(payload.summary),
+        start_date: bilingual(payload.startDate),
+        end_date: bilingual(payload.endDate || payload.startDate),
         chair: String(payload.chair || "").trim(),
-        minutesBy: String(payload.minutesBy || "").trim(),
-        items: agenda.map((question, questionIndex) => ({
-            id: `q${questionIndex + 1}`,
-            question: bilingual(question),
-        })),
+        minutes_by: String(payload.minutesBy || "").trim(),
+        minutes: status === "closed" && minutesText ? bilingual(minutesText) : null,
+        items: buildAgendaItems(questions, existing),
     };
-    delete updated.date;
-
-    if (payload.status === "closed" || payload.status === "active") {
-        updated.status = payload.status;
-    }
-
-    if (updated.status === "closed") {
-        const minutesText = String(payload.minutes || "").trim();
-        if (minutesText) updated.minutes = bilingual(minutesText);
-        else delete updated.minutes;
-    }
-
-    meetings[index] = updated;
-    saveMeetings(meetings);
-    return updated;
 }
 
-function deleteMeeting(id) {
-    const next = getMeetings().filter((meeting) => meeting.id !== id);
-    saveMeetings(next);
+async function saveMeetingFromForm(id, payload) {
+    return backend.saveMeeting(getAdminPassphrase(), buildMeetingPayload(id, payload));
+}
+
+async function deleteMeeting(id) {
+    return backend.removeMeeting(getAdminPassphrase(), id);
 }
 
 function getLang() {
@@ -515,57 +619,15 @@ function localized(value) {
     return value;
 }
 
+// Used only before the first load finishes, or if the database is unreachable.
+// It is deliberately empty: showing invented votes would be worse than showing
+// none, because there is no way to tell them apart from real ones.
 function defaultState() {
-    return {
-        votes: {
-            "naming-space::keep-name::member-demo1": { choice: "yes", name: "Aina" },
-            "naming-space::keep-name::member-demo2": { choice: "yes", name: "Daniel" },
-            "naming-space::keep-name::member-demo3": { choice: "abstain", name: "Sofia" },
-        },
-        notes: {
-            "naming-space": [
-                {
-                    text: "Works for now. We can rename later if needed.",
-                    name: "Aina",
-                    when: "Jul 20, 2026",
-                },
-            ],
-        },
-        comments: {
-            "naming-space::keep-name": [
-                {
-                    text: "Works for now. We can rename later if needed.",
-                    name: "Aina",
-                    when: "Jul 20, 2026",
-                },
-            ],
-        },
-        roles: {},
-        attendees: {
-            "naming-space": ["Aina", "Daniel", "Sofia"],
-        },
-    };
+    return { votes: {}, notes: {}, comments: {}, roles: {}, attendees: {} };
 }
 
 function loadState() {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return defaultState();
-        const parsed = JSON.parse(raw);
-        return {
-            votes: parsed.votes || {},
-            notes: parsed.notes || {},
-            comments: parsed.comments || {},
-            roles: parsed.roles || {},
-            attendees: parsed.attendees || {},
-        };
-    } catch {
-        return defaultState();
-    }
-}
-
-function saveState(state) {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    return cache.state ? clone(cache.state) : defaultState();
 }
 
 function voteKey(meetingId, itemId) {
@@ -611,13 +673,30 @@ function clearMemberName() {
     localStorage.removeItem(NAME_KEY);
 }
 
-function getVoterId() {
-    let id = localStorage.getItem("belia-pbb-voter-id");
+// A random per-browser id nobody ever sees or types. It is not an identity —
+// names are still self-declared. It exists so one device counts as one vote per
+// question, and so you can change your own vote rather than adding a second one.
+function getDeviceId() {
+    let id = localStorage.getItem(DEVICE_KEY);
     if (!id) {
         id = `member-${Math.random().toString(36).slice(2, 10)}`;
-        localStorage.setItem("belia-pbb-voter-id", id);
+        localStorage.setItem(DEVICE_KEY, id);
     }
     return id;
+}
+
+// Kept only for this browser tab, so a shared or forgotten computer does not
+// leave the admin gate open.
+function getAdminPassphrase() {
+    return sessionStorage.getItem(ADMIN_PASS_KEY) || "";
+}
+
+function setAdminPassphrase(value) {
+    sessionStorage.setItem(ADMIN_PASS_KEY, value);
+}
+
+function clearAdminPassphrase() {
+    sessionStorage.removeItem(ADMIN_PASS_KEY);
 }
 
 function meetingUrl(id) {
@@ -743,25 +822,30 @@ function renderMeetingList(meetings) {
     return list;
 }
 
-function getMeetingRoles(meeting, state) {
-    const saved = (state.roles && state.roles[meeting.id]) || {};
+function getMeetingRoles(meeting) {
     return {
-        chair: (saved.chair || meeting.chair || "").trim(),
-        minutesBy: (saved.minutesBy || meeting.minutesBy || "").trim(),
+        chair: (meeting.chair || "").trim(),
+        minutesBy: (meeting.minutesBy || "").trim(),
     };
 }
 
 function ensureJoined(meetingId, memberName) {
     const name = (memberName || "").trim();
-    if (!meetingId || !name) return loadState();
-
     const state = loadState();
-    const existing = state.attendees[meetingId] || [];
-    const alreadyIn = existing.some((entry) => entry.toLowerCase() === name.toLowerCase());
+    if (!meetingId || !name) return state;
+
+    const alreadyIn = (state.attendees[meetingId] || []).some(
+        (entry) => entry.toLowerCase() === name.toLowerCase()
+    );
     if (alreadyIn) return state;
 
-    state.attendees[meetingId] = [...existing, name];
-    saveState(state);
+    // Recording attendance shouldn't hold up the page, and a failure here is not
+    // worth interrupting someone who came to vote.
+    backend.joinMeeting(meetingId, name).catch((error) => {
+        console.error("[belia] could not record attendance", error);
+    });
+
+    state.attendees[meetingId] = [...(state.attendees[meetingId] || []), name];
     return state;
 }
 
@@ -809,37 +893,18 @@ function closeAttendeesDialog() {
     else dialog.removeAttribute("open");
 }
 
-function renderMeetingRoles(meeting, state, locked) {
-    const roles = getMeetingRoles(meeting, state);
+// Chair and minute-taker are part of the meeting record, which only the admin
+// can write. They used to be free-text boxes any member could overwrite; on a
+// shared database that meant one person could silently rewrite them for
+// everyone. They are set in the admin form now, and shown as plain text here.
+function renderMeetingRoles(meeting) {
+    const roles = getMeetingRoles(meeting);
     const chairEl = document.getElementById("meeting-chair");
     const minutesEl = document.getElementById("meeting-minutes");
     if (!chairEl || !minutesEl) return;
 
-    chairEl.replaceChildren(renderRoleValue("chair", roles.chair, meeting, locked));
-    minutesEl.replaceChildren(renderRoleValue("minutesBy", roles.minutesBy, meeting, locked));
-}
-
-function renderRoleValue(field, value, meeting, locked) {
-    if (locked) {
-        const span = document.createElement("span");
-        span.textContent = value || t("roleUnset");
-        return span;
-    }
-
-    const input = document.createElement("input");
-    input.type = "text";
-    input.className = "role-input";
-    input.value = value;
-    input.placeholder = t("roleUnset");
-    input.setAttribute("aria-label", field === "chair" ? t("chairedBy") : t("minutesBy"));
-    input.addEventListener("change", () => {
-        const next = loadState();
-        if (!next.roles[meeting.id]) next.roles[meeting.id] = {};
-        next.roles[meeting.id][field] = input.value.trim();
-        saveState(next);
-        renderAll();
-    });
-    return input;
+    chairEl.textContent = roles.chair || t("roleUnset");
+    minutesEl.textContent = roles.minutesBy || t("roleUnset");
 }
 
 function renderMeetingPage() {
@@ -894,7 +959,7 @@ function renderMeetingPage() {
         ? `${formatMeetingDates(meeting)} · ${t("closedLabel")}`
         : formatMeetingDates(meeting);
     if (rolesEl) rolesEl.hidden = false;
-    renderMeetingRoles(meeting, state, locked);
+    renderMeetingRoles(meeting);
     renderAttendeesList(meeting, state);
 
     if (locked) {
@@ -919,13 +984,13 @@ function renderMeetingPage() {
     if (closedBody) closedBody.hidden = true;
     if (summaryEl) summaryEl.textContent = localized(meeting.summary);
 
-    const voterId = getVoterId();
+    const deviceId = getDeviceId();
     if (agendaRoot) {
         agendaRoot.innerHTML = "";
         const agenda = document.createElement("ul");
         agenda.className = "agenda";
         meeting.items.forEach((item) => {
-            agenda.appendChild(renderAgendaItem(meeting, item, state, voterId, locked, memberName));
+            agenda.appendChild(renderAgendaItem(meeting, item, state, deviceId, locked, memberName));
         });
         agendaRoot.appendChild(agenda);
     }
@@ -978,12 +1043,12 @@ function renderDiscussionPage() {
     dateEl.textContent = `${formatMeetingDates(meeting)} · ${t("closedLabel")}`;
     summaryEl.textContent = localized(meeting.summary);
 
-    const voterId = getVoterId();
+    const deviceId = getDeviceId();
     agendaRoot.innerHTML = "";
     const agenda = document.createElement("ul");
     agenda.className = "agenda";
     meeting.items.forEach((item) => {
-        agenda.appendChild(renderAgendaItem(meeting, item, state, voterId, locked, memberName));
+        agenda.appendChild(renderAgendaItem(meeting, item, state, deviceId, locked, memberName));
     });
     agendaRoot.appendChild(agenda);
 }
@@ -1030,15 +1095,8 @@ function renderItemComments(meeting, item, state, locked, memberName) {
         button.addEventListener("click", () => {
             const text = textarea.value.trim();
             if (!text) return;
-            const next = loadState();
-            if (!next.comments[key]) next.comments[key] = [];
-            next.comments[key].push({
-                text,
-                name: memberName,
-                when: new Date().toLocaleString(),
-            });
-            saveState(next);
-            renderAll();
+            button.disabled = true;
+            applyChange(() => backend.addComment(meeting.id, item.id, text, memberName));
         });
 
         wrap.appendChild(textarea);
@@ -1048,7 +1106,7 @@ function renderItemComments(meeting, item, state, locked, memberName) {
     return wrap;
 }
 
-function renderAgendaItem(meeting, item, state, voterId, locked, memberName) {
+function renderAgendaItem(meeting, item, state, deviceId, locked, memberName) {
     const li = document.createElement("li");
     li.className = "agenda-item";
 
@@ -1057,7 +1115,7 @@ function renderAgendaItem(meeting, item, state, voterId, locked, memberName) {
     question.textContent = localized(item.question);
     li.appendChild(question);
 
-    const myKey = `${voteKey(meeting.id, item.id)}::${voterId}`;
+    const myKey = `${voteKey(meeting.id, item.id)}::${deviceId}`;
     const myVote = normalizeVote(state.votes[myKey]);
     const { counts, names } = countVotes(state.votes, meeting.id, item.id);
 
@@ -1076,14 +1134,13 @@ function renderAgendaItem(meeting, item, state, voterId, locked, memberName) {
         btn.disabled = locked;
         if (!locked) {
             btn.addEventListener("click", () => {
-                const next = loadState();
-                if (myVote && myVote.choice === choice) {
-                    delete next.votes[myKey];
-                } else {
-                    next.votes[myKey] = { choice, name: memberName };
-                }
-                saveState(next);
-                renderAll();
+                // Tapping your current choice again withdraws it.
+                const withdraw = Boolean(myVote && myVote.choice === choice);
+                applyChange(() =>
+                    withdraw
+                        ? backend.clearVote(meeting.id, item.id)
+                        : backend.castVote(meeting.id, item.id, choice, memberName)
+                );
             });
         }
         row.appendChild(btn);
@@ -1185,18 +1242,82 @@ function renderAdminMeetingPage() {
     document.title = `${isEdit ? t("adminUpdate") : t("adminAddMeeting")} · Belia PBB`;
 }
 
+// The passphrase is never checked in the browser — it is sent with each write
+// and the database decides. Unlocking here just verifies it early so the admin
+// finds out now rather than after filling in a whole form.
+function setupAdminLock() {
+    const form = document.getElementById("admin-lock-form");
+    if (!form || form.dataset.bound === "true") return;
+    form.dataset.bound = "true";
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const input = document.getElementById("admin-pass");
+        const passphrase = (input?.value || "").trim();
+        if (!passphrase) return;
+
+        const button = form.querySelector("button[type=submit]");
+        if (button) button.disabled = true;
+        showError("");
+
+        try {
+            const ok = await rest("rpc/admin_check", {
+                method: "POST",
+                body: { p_passphrase: passphrase },
+            });
+            if (!ok) {
+                showError(t("adminWrongPass"));
+                if (input) input.select();
+                return;
+            }
+            setAdminPassphrase(passphrase);
+            renderAll();
+        } catch (error) {
+            showError(error.message);
+        } finally {
+            if (button) button.disabled = false;
+        }
+    });
+}
+
+function renderAdminLock() {
+    const lock = document.getElementById("admin-lock");
+    if (!lock) return;
+    const unlocked = Boolean(getAdminPassphrase());
+    lock.hidden = unlocked;
+
+    // Hide the things that cannot work while locked, rather than letting an
+    // admin fill in a form that is guaranteed to be rejected.
+    const form = document.getElementById("admin-form");
+    if (form) form.hidden = !unlocked;
+    const addBtn = document.getElementById("admin-show-add");
+    if (addBtn) addBtn.hidden = !unlocked;
+    document.querySelectorAll("[data-delete-meeting]").forEach((btn) => {
+        btn.hidden = !unlocked;
+    });
+    document.querySelectorAll(".admin-meeting-actions a").forEach((link) => {
+        link.hidden = !unlocked;
+    });
+}
+
 function setupAdminListPage() {
     const list = document.getElementById("admin-meetings");
     if (!list || list.dataset.bound === "true") return;
     list.dataset.bound = "true";
 
-    list.addEventListener("click", (event) => {
+    list.addEventListener("click", async (event) => {
         const deleteBtn = event.target.closest("[data-delete-meeting]");
         if (!deleteBtn) return;
         const id = deleteBtn.getAttribute("data-delete-meeting");
         if (!id) return;
-        deleteMeeting(id);
-        renderAdminListPage();
+
+        // Deleting takes the agenda, votes and comments with it, for everyone.
+        const meeting = findMeeting(id);
+        const label = meeting ? localized(meeting.title) : id;
+        if (!window.confirm(t("adminConfirmDelete")(label))) return;
+
+        deleteBtn.disabled = true;
+        await applyChange(() => deleteMeeting(id));
     });
 }
 
@@ -1351,8 +1472,11 @@ function setupAdminMeetingForm() {
         if (input) input.focus();
     });
 
-    form.addEventListener("submit", (event) => {
+    let saving = false;
+
+    form.addEventListener("submit", async (event) => {
         event.preventDefault();
+        if (saving) return;
         const title = document.getElementById("admin-title")?.value || "";
         const startDate = document.getElementById("admin-start-date")?.value || "";
         const endDate = document.getElementById("admin-end-date")?.value || "";
@@ -1380,8 +1504,18 @@ function setupAdminMeetingForm() {
         };
 
         const id = form.dataset.editingId || "";
-        if (id) updateMeetingFromForm(id, payload);
-        else createMeetingFromForm(payload);
+
+        // The save has to land before we navigate away, or the change is lost.
+        saving = true;
+        showError("");
+        try {
+            await saveMeetingFromForm(id, payload);
+        } catch (error) {
+            console.error("[belia] could not save meeting", error);
+            showError(error.message);
+            saving = false;
+            return;
+        }
 
         sessionStorage.setItem(ADMIN_NOTICE_KEY, id ? "updated" : "saved");
         window.location.href = "admin.html";
@@ -1391,8 +1525,10 @@ function setupAdminMeetingForm() {
 function renderAll() {
     if (isAdminMeetingPage()) {
         renderAdminMeetingPage();
+        renderAdminLock();
     } else if (isAdminListPage()) {
         renderAdminListPage();
+        renderAdminLock();
     } else if (isDiscussionPage()) {
         renderDiscussionPage();
     } else if (isMeetingPage()) {
@@ -1484,11 +1620,29 @@ function setupAttendeesDialog() {
     });
 }
 
-setupLangToggle();
-setupThemeToggle();
-setupNameGate();
-setupAttendeesDialog();
-setupAdminListPage();
-setupAdminMeetingForm();
-applyTheme();
-renderAll();
+async function init() {
+    applyTheme();
+    setupLangToggle();
+    setupThemeToggle();
+    setupNameGate();
+    setupAttendeesDialog();
+    setupAdminLock();
+
+    // Everything below this line reads meeting data, so warm the cache first.
+    // A failure here is worth showing: without data the page is just empty, and
+    // silence would look like "there are no meetings".
+    try {
+        await loadAll();
+    } catch (error) {
+        console.error("[belia] could not load", error);
+        showError(t("loadFailed"));
+    }
+
+    setupAdminListPage();
+    setupAdminMeetingForm();
+    renderAll();
+}
+
+init().catch((error) => {
+    console.error("[belia] could not start", error);
+});

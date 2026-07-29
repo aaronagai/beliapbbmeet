@@ -4,6 +4,13 @@
     box-sizing: border-box;
 }
 
+/* The `hidden` attribute is only display:none in the browser's own stylesheet,
+   so any class that sets `display` silently overrides it. The app hides things
+   with `hidden` in a dozen places; make it mean what it says. */
+[hidden] {
+    display: none !important;
+}
+
 :root,
 html[data-theme="light"] {
     --bg: #ffffff;
@@ -724,6 +731,20 @@ a:hover {
     margin: 14px 0 8px;
     font-size: 13px;
     color: var(--muted);
+}
+
+/* Shown when a write is rejected or the database cannot be reached. Muted
+   rather than alarming, but distinct enough not to read as ordinary copy. */
+.admin-error {
+    margin: 14px 0 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-left: 3px solid #c0503c;
+    border-radius: 6px;
+    background: var(--card, transparent);
 }
 
 footer {
