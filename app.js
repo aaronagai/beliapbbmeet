@@ -1308,7 +1308,7 @@ function renderItemComments(meeting, item, state, locked, memberName) {
         button.disabled = true;
         button.setAttribute("aria-label", t("addComment"));
         button.title = t("addComment");
-        button.innerHTML = icon("arrowUp", 18);
+        button.innerHTML = icon("arrowUpFilled", 17);
 
         textarea.addEventListener("input", () => {
             button.disabled = !textarea.value.trim();
@@ -1387,7 +1387,7 @@ function renderAgendaItem(meeting, item, state, locked, memberName) {
         const help = document.createElement("button");
         help.type = "button";
         help.className = "vote-help";
-        help.innerHTML = icon("helpSquare", 15);
+        help.innerHTML = icon("helpCircle", 17);
         help.setAttribute("aria-label", t("showVoters"));
         help.title = t("showVoters");
         help.addEventListener("click", () => openVotesDialog(meeting, item, names));

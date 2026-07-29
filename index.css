@@ -539,8 +539,9 @@ a:hover {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
+    /* Tight ratio: the glyph should fill the circle, not float in it. */
+    width: 28px;
+    height: 28px;
     padding: 0;
     border: 0;
     border-radius: 50%;
@@ -551,8 +552,8 @@ a:hover {
 }
 
 .comment-send svg {
-    width: 18px;
-    height: 18px;
+    width: 17px;
+    height: 17px;
 }
 
 .comment-send:hover:not(:disabled) {
@@ -567,21 +568,6 @@ a:hover {
 .item-comments textarea:focus {
     outline: none;
     border-color: var(--text);
-}
-
-.item-comments button {
-    padding: 6px 12px;
-    border: 1px solid var(--btn-bg);
-    background: var(--btn-bg);
-    font: inherit;
-    font-size: 13px;
-    color: var(--btn-text);
-    cursor: pointer;
-}
-
-.item-comments button:hover {
-    background: var(--btn-hover);
-    border-color: var(--btn-hover);
 }
 
 .notes {
