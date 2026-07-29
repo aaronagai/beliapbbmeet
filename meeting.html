@@ -39,25 +39,28 @@
                 <span id="member-status"></span>
                 <button type="button" id="change-name" class="text-btn" data-i18n="changeName">Change</button>
             </p>
-            <div class="title-row">
-                <h1 id="meeting-title">Meeting</h1>
-                <button type="button" id="attendees-open" class="attendees-link"><span class="attendees-icon" aria-hidden="true"></span><span data-i18n="attendees">Attendees</span></button>
-            </div>
-            <p class="updated" id="meeting-date"></p>
-            <div class="meeting-roles" id="meeting-roles">
-                <div class="role">
-                    <span class="role-label" data-i18n="chairedBy">This meeting is chaired by:</span>
-                    <span class="role-value" id="meeting-chair"></span>
+            <div id="meeting-intro">
+                <div class="title-row">
+                    <h1 id="meeting-title">Meeting</h1>
+                    <button type="button" id="attendees-open" class="attendees-link"><span class="attendees-icon" aria-hidden="true"></span><span data-i18n="attendees">Attendees</span></button>
                 </div>
-                <div class="role">
-                    <span class="role-label" data-i18n="minutesBy">Minutes taken by:</span>
-                    <span class="role-value" id="meeting-minutes"></span>
+                <p class="updated" id="meeting-date"></p>
+                <div class="meeting-roles" id="meeting-roles">
+                    <div class="role">
+                        <span class="role-label" data-i18n="chairedBy">This meeting is chaired by:</span>
+                        <span class="role-value" id="meeting-chair"></span>
+                    </div>
+                    <div class="role">
+                        <span class="role-label" data-i18n="minutesBy">Minutes taken by:</span>
+                        <span class="role-value" id="meeting-minutes"></span>
+                    </div>
                 </div>
+                <p id="meeting-summary"></p>
+                <p class="agenda-count" id="agenda-count"></p>
+                <div class="question-nav" id="intro-nav"></div>
             </div>
 
             <div id="active-body">
-                <p id="meeting-summary"></p>
-                <h2 data-i18n="agenda">Agenda</h2>
                 <p class="question-progress" id="question-progress"></p>
                 <div id="agenda"></div>
                 <div class="question-nav" id="question-nav"></div>

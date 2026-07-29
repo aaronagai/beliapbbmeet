@@ -113,6 +113,7 @@ const I18N = {
         nextQuestion: "Next",
         submitAnswers: "Submit",
         noQuestions: "No questions on this agenda yet.",
+        agendaCount: (n) => (n === 1 ? "1 question" : `${n} questions`),
         voteBreakdown: "Who voted what",
         showVoters: "See who voted",
         noVotesYet: "No votes on this question yet.",
@@ -221,6 +222,7 @@ const I18N = {
         nextQuestion: "Seterusnya",
         submitAnswers: "Hantar",
         noQuestions: "Belum ada soalan dalam agenda ini.",
+        agendaCount: (n) => (n === 1 ? "1 soalan" : `${n} soalan`),
         voteBreakdown: "Siapa mengundi apa",
         showVoters: "Lihat siapa mengundi",
         noVotesYet: "Belum ada undian untuk soalan ini.",
@@ -736,21 +738,23 @@ function clearAdminPassphrase() {
     sessionStorage.removeItem(ADMIN_PASS_KEY);
 }
 
-// Questions are numbered from 1 in the URL so the address bar reads the way the
-// page does. Question 1 is the bare URL, which keeps shared links tidy.
+// A meeting is a short sequence: the details, then one question per screen.
+// No `q` is the details; `q=1..N` are the questions, numbered the way the page
+// reads them.
 function meetingUrl(id, question) {
     const base = `meeting.html?id=${encodeURIComponent(id)}`;
-    return question > 1 ? `${base}&q=${question}` : base;
+    return question ? `${base}&q=${question}` : base;
 }
 
-// Clamped rather than trusted: the agenda can shrink under a link someone
-// bookmarked, and a stale `q` should land on the last question, not a blank page.
-function currentQuestionIndex(total) {
-    if (total < 1) return 0;
+// Step 0 is the meeting details, 1..total are questions. Clamped rather than
+// trusted: the agenda can shrink under a link someone bookmarked, and a stale
+// `q` should land on the last question rather than a blank page.
+function currentStep(total) {
     const raw = new URLSearchParams(window.location.search).get("q");
-    const parsed = Number.parseInt(raw ?? "1", 10);
-    if (!Number.isFinite(parsed)) return 0;
-    return Math.min(Math.max(parsed - 1, 0), total - 1);
+    if (raw === null) return 0;
+    const parsed = Number.parseInt(raw, 10);
+    if (!Number.isFinite(parsed) || parsed < 1) return 0;
+    return Math.min(parsed, Math.max(total, 1));
 }
 
 // Which way the last move went, so the incoming question can animate in from
@@ -760,10 +764,10 @@ let questionDirection = null;
 
 // Moving between questions swaps the URL without a reload, so the member is not
 // waiting on the network between questions. Back and forward still work.
-function goToQuestion(meetingId, index) {
-    const from = currentQuestionIndex(Number.MAX_SAFE_INTEGER);
-    questionDirection = index >= from ? "forward" : "back";
-    window.history.pushState({}, "", meetingUrl(meetingId, index + 1));
+function goToStep(meetingId, step) {
+    const from = currentStep(Number.MAX_SAFE_INTEGER);
+    questionDirection = step >= from ? "forward" : "back";
+    window.history.pushState({}, "", meetingUrl(meetingId, step || null));
     renderAll();
     window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -1102,8 +1106,18 @@ function renderMeetingPage() {
     if (rolesEl) rolesEl.hidden = false;
     renderMeetingRoles(meeting);
     renderAttendeesList(meeting, state);
+    if (summaryEl) summaryEl.textContent = localized(meeting.summary);
+
+    const intro = document.getElementById("meeting-intro");
+    const countEl = document.getElementById("agenda-count");
 
     if (locked) {
+        // A closed meeting has no questions to step through, so it is all one
+        // screen: the details and the summary of what was decided.
+        if (intro) intro.hidden = false;
+        if (countEl) countEl.textContent = "";
+        const introNav = document.getElementById("intro-nav");
+        if (introNav) introNav.innerHTML = "";
         if (activeBody) activeBody.hidden = true;
         if (closedBody) closedBody.hidden = false;
         if (minutesBody) {
@@ -1121,32 +1135,42 @@ function renderMeetingPage() {
         return;
     }
 
-    if (activeBody) activeBody.hidden = false;
     if (closedBody) closedBody.hidden = true;
-    if (summaryEl) summaryEl.textContent = localized(meeting.summary);
 
     renderQuestionPage(meeting, state, memberName);
 }
 
-// One question per screen. Members answer on a phone, and a single question with
-// its own comments is a lot easier to work through than a long scrolling list.
+// A meeting reads as a sequence: who is chairing and what it is about, then one
+// question per screen. Once you are answering, the meeting details are out of
+// the way — you have already read them, and on a phone they cost a screenful.
 function renderQuestionPage(meeting, state, memberName) {
+    const intro = document.getElementById("meeting-intro");
+    const activeBody = document.getElementById("active-body");
     const agendaRoot = document.getElementById("agenda");
     const progressEl = document.getElementById("question-progress");
-    const navRoot = document.getElementById("question-nav");
+    const countEl = document.getElementById("agenda-count");
     const items = meeting.items || [];
+    const step = currentStep(items.length);
 
-    if (!items.length) {
-        if (agendaRoot) agendaRoot.innerHTML = `<p class="empty">${escapeHtml(t("noQuestions"))}</p>`;
-        if (progressEl) progressEl.textContent = "";
-        if (navRoot) navRoot.innerHTML = "";
+    if (countEl) {
+        countEl.textContent = items.length ? t("agendaCount")(items.length) : t("noQuestions");
+    }
+
+    if (step === 0) {
+        if (intro) intro.hidden = false;
+        if (activeBody) activeBody.hidden = true;
+        renderIntroNav(meeting, items.length);
+        questionDirection = null;
         return;
     }
 
-    const index = currentQuestionIndex(items.length);
+    if (intro) intro.hidden = true;
+    if (activeBody) activeBody.hidden = false;
+
+    const index = step - 1;
 
     if (progressEl) {
-        progressEl.textContent = t("questionProgress")(index + 1, items.length);
+        progressEl.textContent = t("questionProgress")(step, items.length);
         if (questionDirection) restartAnimation(progressEl, "progressEnter");
     }
 
@@ -1163,27 +1187,41 @@ function renderQuestionPage(meeting, state, memberName) {
         else delete agendaRoot.dataset.enter;
     }
 
-    renderQuestionNav(meeting, index, items.length);
+    renderQuestionNav(meeting, step, items.length);
 
     // A vote re-renders the page too, and that should not replay the slide.
     questionDirection = null;
 }
 
-function renderQuestionNav(meeting, index, total) {
+function renderIntroNav(meeting, total) {
+    const navRoot = document.getElementById("intro-nav");
+    if (!navRoot) return;
+    navRoot.innerHTML = "";
+    if (!total) return;
+
+    const start = document.createElement("button");
+    start.type = "button";
+    start.className = "nav-btn nav-btn-next";
+    start.innerHTML = `<span>${escapeHtml(t("nextQuestion"))}</span>${icon("arrowRight", 16)}`;
+    start.addEventListener("click", () => goToStep(meeting.id, 1));
+    navRoot.appendChild(start);
+}
+
+function renderQuestionNav(meeting, step, total) {
     const navRoot = document.getElementById("question-nav");
     if (!navRoot) return;
     navRoot.innerHTML = "";
 
-    if (index > 0) {
-        const previous = document.createElement("button");
-        previous.type = "button";
-        previous.className = "nav-btn nav-btn-prev";
-        previous.innerHTML = `${icon("arrowLeft", 16)}<span>${escapeHtml(t("previousQuestion"))}</span>`;
-        previous.addEventListener("click", () => goToQuestion(meeting.id, index - 1));
-        navRoot.appendChild(previous);
-    }
+    // Step 1 goes back to the meeting details rather than nowhere, so the way
+    // in is also the way back.
+    const previous = document.createElement("button");
+    previous.type = "button";
+    previous.className = "nav-btn nav-btn-prev";
+    previous.innerHTML = `${icon("arrowLeft", 16)}<span>${escapeHtml(t("previousQuestion"))}</span>`;
+    previous.addEventListener("click", () => goToStep(meeting.id, step - 1));
+    navRoot.appendChild(previous);
 
-    const isLast = index === total - 1;
+    const isLast = step === total;
     const forward = document.createElement("button");
     forward.type = "button";
     forward.className = "nav-btn nav-btn-next";
@@ -1194,7 +1232,7 @@ function renderQuestionNav(meeting, index, total) {
         // Votes are already saved as they are cast, so Submit is just the way
         // out of the last question, not the thing that records anything.
         if (isLast) window.location.href = "index.html";
-        else goToQuestion(meeting.id, index + 1);
+        else goToStep(meeting.id, step + 1);
     });
     navRoot.appendChild(forward);
 }

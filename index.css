@@ -1375,3 +1375,17 @@ footer {
 .name-form button:active {
     transform: scale(0.97);
 }
+
+/* The intro screen ends with how many questions are coming, so nobody starts a
+   twelve-question agenda thinking it is two. */
+.agenda-count {
+    margin: 0 0 4px;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+/* On the intro there is only a forward button, and it belongs at the right
+   where Next always sits. */
+#intro-nav {
+    justify-content: flex-end;
+}
