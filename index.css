@@ -712,6 +712,42 @@ a:hover {
     border-color: var(--text);
 }
 
+.question-progress {
+    margin: 0 0 14px;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.question-nav {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 26px;
+    padding-top: 18px;
+    border-top: 1px solid var(--border);
+}
+
+/* With no Previous button, the single forward button would otherwise stretch
+   under space-between; push it to the right so it stays put between questions. */
+.question-nav > :only-child {
+    margin-left: auto;
+}
+
+.submit-btn {
+    padding: 8px 18px;
+    border: 1px solid var(--text);
+    background: var(--text);
+    font: inherit;
+    font-size: 13px;
+    color: var(--bg);
+    cursor: pointer;
+}
+
+.submit-btn:hover {
+    opacity: 0.85;
+}
+
 .secondary-btn {
     justify-self: start;
     padding: 6px 12px;
